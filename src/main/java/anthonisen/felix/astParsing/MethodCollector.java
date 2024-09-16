@@ -21,10 +21,10 @@ public class MethodCollector extends VoidVisitorAdapter<Map<String, MethodData>>
     @Override
     public void visit(MethodDeclaration n, Map<String, MethodData> arg) {
         super.visit(n, arg);
-        String signature = n.getSignature().asString();
+        String methodName = n.getNameAsString();
         Type type = n.getType().clone();
         boolean shouldReplace = replaceTypes(type, "T", "Object"); // TODO get typeparams and bound
-        arg.put(signature, new MethodData(shouldReplace, type.asString()));
+        arg.put(methodName, new MethodData(shouldReplace, type.asString()));
     }
 
     public static boolean replaceTypes(Type type, String targetTypeName, String newTypeName) {
