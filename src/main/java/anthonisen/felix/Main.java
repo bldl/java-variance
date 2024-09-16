@@ -1,9 +1,16 @@
 package anthonisen.felix;
 
+import com.github.javaparser.utils.Log;
+
+import anthonisen.felix.astParsing.Covariancer;
+
 class Main {
     public static void main(String[] args) {
-        System.out.println("Test");
-        AstManipulator manip = new AstManipulator();
-        manip.manipulateB();
+        Log.setAdapter(new Log.StandardOutStandardErrorAdapter());
+        Covariancer manip = new Covariancer();
+        manip.makeCovariant();
+        // manip.manipulateB();
+        // TypeEraser eraser = new TypeEraser();
+        // eraser.eraseA();
     }
 }
