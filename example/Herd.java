@@ -2,8 +2,8 @@ package anthonisen.felix.example;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 public class Herd<T extends Animal> {
     private List<T> animals = new ArrayList<>();
@@ -16,8 +16,8 @@ public class Herd<T extends Animal> {
         return animals.size();
     }
 
-    public List<Map<T, T>> somemethod() {
-        return null;
+    public Collection<T> getAll() {
+        return Collections.unmodifiableCollection(animals);
     }
 
     public T get(int i) {
