@@ -7,14 +7,16 @@ import org.junit.jupiter.api.Test;
 
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
-public class TestMethodCollector {
+import anthonisen.felix.astParsing.util.TypeReplacer;
+
+public class TestTypeReplacer {
     @Test
     public void sanityTestReplaceTypes() {
         // Declare type List<Integer>
         ClassOrInterfaceType type = new ClassOrInterfaceType(null, "List");
         type.setTypeArguments(new ClassOrInterfaceType(null, "Integer"));
 
-        assertTrue(MethodCollector.replaceTypes(type, "Integer", "Object"));
+        assertTrue(TypeReplacer.replaceTypes(type, "Integer", "Object"));
         assertEquals("List<Object>", type.asString());
     }
 
@@ -23,7 +25,7 @@ public class TestMethodCollector {
         ClassOrInterfaceType type = new ClassOrInterfaceType(null, "Map");
         type.setTypeArguments(new ClassOrInterfaceType(null, "Integer"), new ClassOrInterfaceType(null, "Integer"));
 
-        assertTrue(MethodCollector.replaceTypes(type, "Integer", "Double"));
+        assertTrue(TypeReplacer.replaceTypes(type, "Integer", "Double"));
         assertEquals("Map<Double,Double>", type.asString());
     }
 }

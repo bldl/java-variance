@@ -1,4 +1,4 @@
-package anthonisen.felix.astParsing;
+package anthonisen.felix.astParsing.visitors;
 
 import java.util.Map;
 import java.util.Optional;
@@ -7,6 +7,8 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
 import com.github.javaparser.ast.visitor.Visitable;
+
+import anthonisen.felix.astParsing.util.MethodData;
 
 public class CastInsertionVisitor extends ModifierVisitor<Void> {
     private final String ref;
