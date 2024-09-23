@@ -10,4 +10,8 @@ class Animal {
     public void feed() {
         System.out.println("Feeding the animal " + name);
     }
+
+    public String getName() {
+        return name;
+    }
 }
