@@ -8,7 +8,6 @@ public class TypeReplacer {
         boolean found = false;
         if (type instanceof ClassOrInterfaceType) {
             ClassOrInterfaceType classType = (ClassOrInterfaceType) type;
-            System.out.println(type);
             if (classType.asString().equals(targetTypeName)) {
                 found = true;
                 classType.replace(new ClassOrInterfaceType(null, newTypeName));
