@@ -15,11 +15,11 @@ public class TypeReplacer {
                 classType.setName(newTypeName);
             }
 
-            // if (classType.getTypeArguments().isPresent()) {
-            // for (Type arg : classType.getTypeArguments().get()) {
-            // found = replaceTypes(arg, targetTypeName, newTypeName) || found;
-            // }
-            // }
+            if (classType.getTypeArguments().isPresent()) {
+                for (Type arg : classType.getTypeArguments().get()) {
+                    found = replaceTypes(arg, targetTypeName, newTypeName) || found;
+                }
+            }
         }
         return found;
     }
