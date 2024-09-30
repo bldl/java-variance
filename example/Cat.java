@@ -1,4 +1,4 @@
-package anthonisen.felix.example;
+package anthonisen.felix.output;
 
 public class Cat extends Animal {
 

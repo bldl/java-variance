@@ -1,4 +1,4 @@
-package anthonisen.felix.example;
+package anthonisen.felix.output;
 
 class Animal {
     protected String name;

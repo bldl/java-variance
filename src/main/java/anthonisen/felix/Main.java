@@ -9,8 +9,5 @@ class Main {
         Log.setAdapter(new Log.StandardOutStandardErrorAdapter());
         Covariancer manip = new Covariancer();
         manip.makeCovariant();
-        // manip.manipulateB();
-        // TypeEraser eraser = new TypeEraser();
-        // eraser.eraseA();
     }
 }

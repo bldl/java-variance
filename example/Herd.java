@@ -1,4 +1,4 @@
-package anthonisen.felix.example;
+package anthonisen.felix.output;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,8 +16,8 @@ public class Herd<T extends Animal> {
         return animals.size();
     }
 
-    public Collection<T> getAll() {
-        return Collections.unmodifiableCollection(animals);
+    public List<T> getAll() {
+        return Collections.unmodifiableList(animals);
     }
 
     public T get(int i) {
@@ -25,7 +25,10 @@ public class Herd<T extends Animal> {
     }
 
     public static void feedAll(Herd<Animal> herd) {
-        for (int i = 0; i < herd.getSizeOfHerd(); ++i)
-            herd.get(i).feed();
+        for (int i = 0; i < herd.getSizeOfHerd(); ++i) {
+            Animal Animal_herd_get_i = (Animal) herd.get(i);
+            Animal_herd_get_i.feed();
+            // herd.get(i).feed();
+        }
     }
 }

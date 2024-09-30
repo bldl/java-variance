@@ -1,4 +1,4 @@
-package anthonisen.felix.example;
+package anthonisen.felix.output;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,8 +14,9 @@ public class Main {
         Herd<Cat> catHerd = new Herd<>(Arrays.asList(new Cat("Katty"), new Cat("Mons")));
 
         Cat katty = catHerd.get(0);
+        katty.cleanLitter();
 
-        Collection<Cat> allCats = catHerd.getAll();
+        List<Cat> allCats = catHerd.getAll();
 
         for (Cat cat : allCats) {
             cat.feed();
@@ -24,10 +25,9 @@ public class Main {
         Herd.feedAll(animalHerd);
     }
 
-    private static void printNamesAndFeed(Herd<? extends Animal> herd) {
-        for (Animal animal : herd.getAll()) {
-            System.out.println(animal.name);
+    private static void cleanAllLitters(Herd<Cat> herd) {
+        for (Cat cat : herd.getAll()) {
+            cat.cleanLitter();
         }
-        Herd.feedAll(herd);
     }
 }
