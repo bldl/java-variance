@@ -25,7 +25,7 @@ public class MethodCollector extends VoidVisitorAdapter<Map<String, MethodData>>
         super.visit(n, arg);
         String methodName = n.getNameAsString();
         Type type = n.getType().clone();
-        boolean shouldReplace = TypeReplacer.replaceTypes(type, "T", "Cat"); // TODO get typeparams and bound
+        boolean shouldReplace = TypeReplacer.replaceTypes(type, "T", "*"); // TODO get typeparams and bound
         arg.put(methodName, new MethodData(shouldReplace, type.asString()));
     }
 

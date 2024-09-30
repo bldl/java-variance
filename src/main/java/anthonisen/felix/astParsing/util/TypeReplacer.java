@@ -1,5 +1,6 @@
 package anthonisen.felix.astParsing.util;
 
+import java.util.Map;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 
@@ -8,15 +9,34 @@ public class TypeReplacer {
         boolean found = false;
         if (type instanceof ClassOrInterfaceType) {
             ClassOrInterfaceType classType = (ClassOrInterfaceType) type;
-            if (classType.asString().equals(targetTypeName)) {
+            if (classType.getNameAsString().equals(targetTypeName)) {
                 found = true;
                 classType.replace(new ClassOrInterfaceType(null, newTypeName));
                 classType.setName(newTypeName);
             }
 
+            // if (classType.getTypeArguments().isPresent()) {
+            // for (Type arg : classType.getTypeArguments().get()) {
+            // found = replaceTypes(arg, targetTypeName, newTypeName) || found;
+            // }
+            // }
+        }
+        return found;
+    }
+
+    public static boolean replaceTypes(Type type, Map<String, String> classes) {
+        boolean found = false;
+        if (type instanceof ClassOrInterfaceType) {
+            ClassOrInterfaceType classType = (ClassOrInterfaceType) type;
+            if (classes.containsKey(classType.getNameAsString())) {
+                found = true;
+                classType.replace(new ClassOrInterfaceType(null, classes.get(classType.getNameAsString())));
+                classType.setName(classes.get(classType.getNameAsString()));
+            }
+
             if (classType.getTypeArguments().isPresent()) {
                 for (Type arg : classType.getTypeArguments().get()) {
-                    found = replaceTypes(arg, targetTypeName, newTypeName) || found;
+                    found = replaceTypes(arg, classes) || found;
                 }
             }
         }

@@ -4,11 +4,13 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.utils.CodeGenerationUtils;
 import com.github.javaparser.utils.SourceRoot;
 
+import anthonisen.felix.astParsing.util.ClassData;
 import anthonisen.felix.astParsing.util.MethodData;
 import anthonisen.felix.astParsing.visitors.CastInsertionVisitor;
 import anthonisen.felix.astParsing.visitors.MethodCollector;
 import anthonisen.felix.astParsing.visitors.TypeEraserVisitor;
 import anthonisen.felix.astParsing.visitors.VariableCollector;
+import anthonisen.felix.util.Pair;
 import anthonisen.felix.astParsing.visitors.ClassCollector;
 
 import java.io.File;
@@ -27,22 +29,24 @@ public class Covariancer {
                 CodeGenerationUtils.mavenModuleRoot(Covariancer.class).resolve(sourceFolder));
         MethodCollector collector = new MethodCollector(Arrays.asList("T"));
         Map<String, MethodData> methodMap = new HashMap<>();
-        Set<String> classesToWatch = new HashSet<String>();
+        Set<ClassData> classesToWatch = new HashSet<>();
         sourceRoot.parse("", "Herd.java").accept(collector, methodMap);
 
         File dir = Paths.get(sourceFolder).toFile();
         assert dir.exists();
         assert dir.isDirectory();
+
         for (File file : dir.listFiles()) {
             CompilationUnit cu = sourceRoot.parse("", file.getName());
             cu.accept(new ClassCollector(), classesToWatch);
         }
+
         for (File file : dir.listFiles()) {
             CompilationUnit cu = sourceRoot.parse("", file.getName());
-            Set<String> varsToWatch = new HashSet<>();
+            Set<Pair<String, String>> varsToWatch = new HashSet<>();
             cu.accept(new VariableCollector(classesToWatch), varsToWatch);
-            cu.accept(new TypeEraserVisitor(), null);
-            for (String var : varsToWatch) {
+            cu.accept(new TypeEraserVisitor(classesToWatch), null);
+            for (Pair<String, String> var : varsToWatch) {
                 CastInsertionVisitor castInsertionVisitor = new CastInsertionVisitor(var, methodMap);
                 cu.accept(castInsertionVisitor, null);
 
