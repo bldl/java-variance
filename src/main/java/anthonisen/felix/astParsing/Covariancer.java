@@ -20,17 +20,27 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.processing.Messager;
+import javax.tools.Diagnostic.Kind;
 
 public class Covariancer {
+    private Messager messager;
+    private String sourceFolder;
+    private SourceRoot sourceRoot;
 
-    public void makeCovariant() {
-        String sourceFolder = "example";
-        SourceRoot sourceRoot = new SourceRoot(
+    public Covariancer(Messager messager, String sourceFolder) {
+        this.messager = messager;
+        this.sourceFolder = sourceFolder;
+        sourceRoot = new SourceRoot(
                 CodeGenerationUtils.mavenModuleRoot(Covariancer.class).resolve(sourceFolder));
+    }
+
+    public void makeCovariant(String cls) {
+        messager.printMessage(Kind.NOTE, "Now parsing AST's");
         MethodCollector collector = new MethodCollector(Arrays.asList("T"));
         Map<String, MethodData> methodMap = new HashMap<>();
         Set<ClassData> classesToWatch = new HashSet<>();
-        sourceRoot.parse("", "Herd.java").accept(collector, methodMap);
+        sourceRoot.parse("", cls).accept(collector, methodMap);
 
         File dir = Paths.get(sourceFolder).toFile();
         assert dir.exists();
@@ -52,6 +62,11 @@ public class Covariancer {
 
             }
         }
-        sourceRoot.saveAll(CodeGenerationUtils.mavenModuleRoot(Covariancer.class).resolve(Paths.get("output")));
+
+    }
+
+    public void applyChanges() {
+        this.sourceRoot.saveAll(
+                CodeGenerationUtils.mavenModuleRoot(Covariancer.class).resolve(Paths.get(sourceFolder + "/output")));
     }
 }
