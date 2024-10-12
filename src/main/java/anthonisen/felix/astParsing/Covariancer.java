@@ -1,6 +1,8 @@
 package anthonisen.felix.astParsing;
 
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.PackageDeclaration;
+import com.github.javaparser.ast.expr.Name;
 import com.github.javaparser.utils.CodeGenerationUtils;
 import com.github.javaparser.utils.SourceRoot;
 
@@ -53,6 +55,7 @@ public class Covariancer {
 
         for (File file : dir.listFiles()) {
             CompilationUnit cu = sourceRoot.parse("", file.getName());
+            changePackageDeclaration(cu);
             Set<Pair<String, String>> varsToWatch = new HashSet<>();
             cu.accept(new VariableCollector(classesToWatch), varsToWatch);
             cu.accept(new TypeEraserVisitor(classesToWatch), null);
@@ -68,5 +71,14 @@ public class Covariancer {
     public void applyChanges() {
         this.sourceRoot.saveAll(
                 CodeGenerationUtils.mavenModuleRoot(Covariancer.class).resolve(Paths.get(sourceFolder + "/output")));
+    }
+
+    public SourceRoot getSourceRoot() {
+        return sourceRoot;
+    }
+
+    private void changePackageDeclaration(CompilationUnit cu) {
+        String newPackageName = cu.getPackageDeclaration().get().getNameAsString() + ".output";
+        cu.setPackageDeclaration(new PackageDeclaration(new Name(newPackageName)));
     }
 }
