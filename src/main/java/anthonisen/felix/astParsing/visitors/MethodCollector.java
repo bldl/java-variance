@@ -3,7 +3,7 @@ package anthonisen.felix.astParsing.visitors;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
 import anthonisen.felix.astParsing.util.MethodData;
-import anthonisen.felix.astParsing.util.TypeReplacer;
+import anthonisen.felix.astParsing.util.TypeHandler;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -25,7 +25,7 @@ public class MethodCollector extends VoidVisitorAdapter<Map<String, MethodData>>
         super.visit(n, arg);
         String methodName = n.getNameAsString();
         Type type = n.getType().clone();
-        boolean shouldReplace = TypeReplacer.replaceTypes(type, "T", "*"); // TODO get typeparams and bound
+        boolean shouldReplace = TypeHandler.replaceTypes(type, "T", "*"); // TODO get typeparams and bound
         arg.put(methodName, new MethodData(shouldReplace, type.asString()));
     }
 

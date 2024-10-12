@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import anthonisen.felix.astParsing.util.ClassData;
-import anthonisen.felix.astParsing.util.TypeReplacer;
+import anthonisen.felix.astParsing.util.TypeHandler;
 
 public class TypeEraserVisitor extends ModifierVisitor<Void> {
 
@@ -23,12 +23,12 @@ public class TypeEraserVisitor extends ModifierVisitor<Void> {
 
     @Override
     public Visitable visit(VariableDeclarationExpr n, Void arg) {
-        TypeReplacer.replaceTypes(n.getElementType(), classCasts);
+        TypeHandler.replaceTypes(n.getElementType(), classCasts);
         return super.visit(n, arg);
     }
 
     public Visitable visit(Parameter n, Void arg) {
-        TypeReplacer.replaceTypes(n.getType(), classCasts);
+        TypeHandler.replaceTypes(n.getType(), classCasts);
         return super.visit(n, arg);
     }
 }
