@@ -4,7 +4,7 @@ import java.util.Map;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 
-public class TypeReplacer {
+public class TypeHandler {
     public static boolean replaceTypes(Type type, String targetTypeName, String newTypeName) {
         boolean found = false;
         if (type instanceof ClassOrInterfaceType) {
@@ -41,5 +41,18 @@ public class TypeReplacer {
             }
         }
         return found;
+    }
+
+    public static boolean containsType(Type sourceType, String targetType) {
+        if (!(sourceType instanceof ClassOrInterfaceType))
+            return sourceType.asString().equals(targetType);
+        ClassOrInterfaceType type = (ClassOrInterfaceType) sourceType;
+        boolean b = false;
+        if (type.getTypeArguments().isPresent())
+            for (Type arg : type.getTypeArguments().get())
+                b = b || containsType(arg, targetType);
+
+        return type.getNameAsString().equals(targetType) || b;
+
     }
 }
