@@ -1,9 +1,9 @@
 package anthonisen.felix.annotationProcessing;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.type.Type;
+import java.util.HashSet;
 import java.util.Set;
-
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.Processor;
@@ -16,51 +16,70 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.tools.Diagnostic.Kind;
 import com.google.auto.service.AutoService;
-
 import anthonisen.felix.astParsing.Covariancer;
+import anthonisen.felix.astParsing.util.TypeHandler;
+import anthonisen.felix.astParsing.visitors.ParameterTypeCollector;
+import anthonisen.felix.astParsing.visitors.ReturnTypeCollector;
 
 @AutoService(Processor.class)
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 @SupportedAnnotationTypes("anthonisen.felix.annotationProcessing.MyVariance")
 public class VarianceProcessor extends AbstractProcessor {
-
-    Map<String, String> classHierarchy = new HashMap<>();
+    private Messager messager;
+    private Covariancer covariancer;
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        Messager messager = processingEnv.getMessager();
-        Covariancer covariancer = new Covariancer(messager,
+        messager = processingEnv.getMessager();
+        covariancer = new Covariancer(messager,
                 System.getProperty("user.dir") + "/src/main/java/anthonisen/felix");
         messager.printMessage(Kind.NOTE, "Processing annotations:\n");
         for (Element e : roundEnv.getElementsAnnotatedWith(MyVariance.class)) {
             MyVariance annotation = e.getAnnotation(MyVariance.class);
             messager.printMessage(Kind.NOTE, e.getEnclosingElement().getKind().name());
-            if (isClassParameter(e)) {
-                messager.printMessage(Kind.NOTE, "Is part of a class declaration");
-            } else
-                messager.printMessage(Kind.NOTE, "Is part of a method declaration");
-            messager.printMessage(Kind.NOTE, e.getEnclosingElement().getKind().name());
-            switch (annotation.variance()) {
-                case INVARIANT:
-                    messager.printMessage(Kind.NOTE, "Invariant class detected");
-                    break;
-                case CONTRAVARIANT:
-                    messager.printMessage(Kind.NOTE, "Contravariant class detected");
-                    break;
-                case COVARIANT:
-                    messager.printMessage(Kind.NOTE, "Covariant class detected");
-                    break;
-            }
+
+            // should not process method declarations
+            if (!isClassParameter(e))
+                continue;
+
             TypeParameterElement tE = (TypeParameterElement) e;
-            covariancer.makeCovariant(tE.getEnclosingElement().getSimpleName() + ".java");
-            // Get the enclosing element (this could be a class, method, or constructor)
+            String className = tE.getEnclosingElement().getSimpleName().toString();
+            if (annotation.variance() == VarianceType.INVARIANT) {
+                messager.printMessage(Kind.NOTE,
+                        String.format(
+                                "Invariant type parameter detected in class: %s\nWill not proceed with AST manipulation",
+                                className));
+            }
+            checkVariance(className, annotation.variance());
+            covariancer.makeCovariant(className + ".java");
 
         }
         covariancer.applyChanges();
         return true;
     }
 
-    // Check whether the type parameter is for a class or a method
+    private void checkVariance(String className, VarianceType variance) {
+        Set<Type> types = new HashSet<>();
+        CompilationUnit cu = covariancer.getSourceRoot().parse("", className + ".java");
+        if (variance == VarianceType.CONTRAVARIANT)
+            cu.accept(new ReturnTypeCollector(), types);
+        else
+            cu.accept(new ParameterTypeCollector(), types);
+
+        for (Type type : types) {
+            if (TypeHandler.containsType(type, "T")) {
+                messager.printMessage(
+                        Kind.WARNING,
+                        String.format(
+                                "%s is declared as %s, but does not conform to constraints: contains T in %s position",
+                                className,
+                                variance,
+                                variance == VarianceType.COVARIANT ? "IN" : "OUT"));
+                break;
+            }
+        }
+    }
+
     private static boolean isClassParameter(Element e) {
         return e.getEnclosingElement().getKind().name().equals("CLASS");
     }
