@@ -37,24 +37,47 @@ public class Covariancer {
                 CodeGenerationUtils.mavenModuleRoot(Covariancer.class).resolve(sourceFolder));
     }
 
-    public void makeCovariant(String cls) {
+    public void makeCovariant(String cls, String packageName) {
         messager.printMessage(Kind.NOTE, "Now parsing AST's");
-        MethodCollector collector = new MethodCollector(Arrays.asList("T"));
-        Map<String, MethodData> methodMap = new HashMap<>();
-        Set<ClassData> classesToWatch = new HashSet<>();
-        sourceRoot.parse("", cls).accept(collector, methodMap);
 
         File dir = Paths.get(sourceFolder).toFile();
         assert dir.exists();
         assert dir.isDirectory();
 
+        Set<ClassData> classesToWatch = computeClassesToWatch(dir, "");
+        Map<String, MethodData> methodMap = new HashMap<>();
+
+        sourceRoot.parse(packageName, cls).accept(new MethodCollector(Arrays.asList("T")),
+                methodMap);
+        changeAST(dir, classesToWatch, methodMap, "");
+
+    }
+
+    private Set<ClassData> computeClassesToWatch(File dir, String packageName) {
+        Set<ClassData> classesToWatch = new HashSet<>();
         for (File file : dir.listFiles()) {
-            CompilationUnit cu = sourceRoot.parse("", file.getName());
+            if (file.isDirectory()) {
+                classesToWatch
+                        .addAll(computeClassesToWatch(file, appendPackageDeclaration(packageName, file.getName())));
+                continue;
+            }
+            CompilationUnit cu = sourceRoot.parse(packageName, file.getName());
             cu.accept(new ClassCollector(), classesToWatch);
         }
+        return classesToWatch;
+    }
 
+    private void changeAST(File dir, Set<ClassData> classesToWatch, Map<String, MethodData> methodMap,
+            String packageName) {
         for (File file : dir.listFiles()) {
-            CompilationUnit cu = sourceRoot.parse("", file.getName());
+            if (file.isDirectory()) {
+                changeAST(file, classesToWatch, methodMap, appendPackageDeclaration(packageName, file.getName()));
+                continue;
+            }
+            if (!isJavaFile(file))
+                continue;
+
+            CompilationUnit cu = sourceRoot.parse(packageName, file.getName());
             changePackageDeclaration(cu);
             Set<Pair<String, String>> varsToWatch = new HashSet<>();
             cu.accept(new VariableCollector(classesToWatch), varsToWatch);
@@ -62,10 +85,8 @@ public class Covariancer {
             for (Pair<String, String> var : varsToWatch) {
                 CastInsertionVisitor castInsertionVisitor = new CastInsertionVisitor(var, methodMap);
                 cu.accept(castInsertionVisitor, null);
-
             }
         }
-
     }
 
     public void applyChanges() {
@@ -77,8 +98,18 @@ public class Covariancer {
         return sourceRoot;
     }
 
+    private boolean isJavaFile(File file) {
+        return file.getName().endsWith(".java");
+    }
+
     private void changePackageDeclaration(CompilationUnit cu) {
-        String newPackageName = cu.getPackageDeclaration().get().getNameAsString() + ".output";
+        String newPackageName = "output." + cu.getPackageDeclaration().get().getNameAsString();
         cu.setPackageDeclaration(new PackageDeclaration(new Name(newPackageName)));
+    }
+
+    private String appendPackageDeclaration(String existing, String toAppend) {
+        if (existing.equals(""))
+            return toAppend;
+        return existing + "." + toAppend;
     }
 }

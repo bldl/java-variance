@@ -11,7 +11,7 @@ import javax.tools.Diagnostic;
 class Main {
     public static void main(String[] args) {
         Covariancer manip = new Covariancer(new StdoutMessager(), "example");
-        manip.makeCovariant("Herd.java");
+        manip.makeCovariant("Herd.java", "");
         manip.applyChanges();
     }
 }

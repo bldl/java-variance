@@ -32,7 +32,7 @@ public class VarianceProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         messager = processingEnv.getMessager();
         covariancer = new Covariancer(messager,
-                System.getProperty("user.dir") + "/src/main/java/anthonisen/felix");
+                System.getProperty("user.dir") + "/src/main/java");
         messager.printMessage(Kind.NOTE, "Processing annotations:\n");
         for (Element e : roundEnv.getElementsAnnotatedWith(MyVariance.class)) {
             MyVariance annotation = e.getAnnotation(MyVariance.class);
@@ -50,17 +50,19 @@ public class VarianceProcessor extends AbstractProcessor {
                                 "Invariant type parameter detected in class: %s\nWill not proceed with AST manipulation",
                                 className));
             }
-            checkVariance(className, annotation.variance());
-            covariancer.makeCovariant(className + ".java");
+            String packageName = processingEnv.getElementUtils().getPackageOf(e).toString();
+            checkVariance(className, annotation.variance(), packageName);
+            covariancer.makeCovariant(className + ".java", packageName);
 
         }
         covariancer.applyChanges();
         return true;
     }
 
-    private void checkVariance(String className, VarianceType variance) {
+    private void checkVariance(String className, VarianceType variance, String packageName) {
         Set<Type> types = new HashSet<>();
-        CompilationUnit cu = covariancer.getSourceRoot().parse("", className + ".java");
+        CompilationUnit cu = covariancer.getSourceRoot().parse(packageName, className
+                + ".java");
         if (variance == VarianceType.CONTRAVARIANT)
             cu.accept(new ReturnTypeCollector(), types);
         else
