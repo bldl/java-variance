@@ -36,6 +36,9 @@ public class VarianceProcessor extends AbstractProcessor {
         messager.printMessage(Kind.NOTE, "Processing annotations:\n");
         for (Element e : roundEnv.getElementsAnnotatedWith(MyVariance.class)) {
             MyVariance annotation = e.getAnnotation(MyVariance.class);
+            String packageName = processingEnv.getElementUtils().getPackageOf(e).toString();
+            if (packageName.contains("output"))
+                continue;
             messager.printMessage(Kind.NOTE, e.getEnclosingElement().getKind().name());
 
             // should not process method declarations
@@ -50,7 +53,7 @@ public class VarianceProcessor extends AbstractProcessor {
                                 "Invariant type parameter detected in class: %s\nWill not proceed with AST manipulation",
                                 className));
             }
-            String packageName = processingEnv.getElementUtils().getPackageOf(e).toString();
+
             checkVariance(className, annotation.variance(), packageName);
             covariancer.makeCovariant(className + ".java", packageName);
 

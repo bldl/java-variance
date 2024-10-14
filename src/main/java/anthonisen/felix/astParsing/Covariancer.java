@@ -57,8 +57,9 @@ public class Covariancer {
         Set<ClassData> classesToWatch = new HashSet<>();
         for (File file : dir.listFiles()) {
             if (file.isDirectory()) {
-                classesToWatch
-                        .addAll(computeClassesToWatch(file, appendPackageDeclaration(packageName, file.getName())));
+                if (!file.getName().equals("output"))
+                    classesToWatch
+                            .addAll(computeClassesToWatch(file, appendPackageDeclaration(packageName, file.getName())));
                 continue;
             }
             CompilationUnit cu = sourceRoot.parse(packageName, file.getName());
@@ -71,7 +72,8 @@ public class Covariancer {
             String packageName) {
         for (File file : dir.listFiles()) {
             if (file.isDirectory()) {
-                changeAST(file, classesToWatch, methodMap, appendPackageDeclaration(packageName, file.getName()));
+                if (!file.getName().equals("output"))
+                    changeAST(file, classesToWatch, methodMap, appendPackageDeclaration(packageName, file.getName()));
                 continue;
             }
             if (!isJavaFile(file))
