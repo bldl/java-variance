@@ -80,7 +80,7 @@ public class Covariancer {
                 continue;
 
             CompilationUnit cu = sourceRoot.parse(packageName, file.getName());
-            changePackageDeclaration(cu);
+            // changePackageDeclaration(cu);
             Set<Pair<String, String>> varsToWatch = new HashSet<>();
             cu.accept(new VariableCollector(classesToWatch), varsToWatch);
             cu.accept(new TypeEraserVisitor(classesToWatch), null);
@@ -92,6 +92,7 @@ public class Covariancer {
     }
 
     public void applyChanges() {
+        this.sourceRoot.getCompilationUnits().forEach(cu -> changePackageDeclaration(cu));
         this.sourceRoot.saveAll(
                 CodeGenerationUtils.mavenModuleRoot(Covariancer.class).resolve(Paths.get(sourceFolder + "/output")));
     }
