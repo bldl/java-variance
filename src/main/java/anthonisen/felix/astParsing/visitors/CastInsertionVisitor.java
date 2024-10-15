@@ -28,7 +28,7 @@ public class CastInsertionVisitor extends ModifierVisitor<Void> {
         NameExpr expr = (NameExpr) scope.get();
         if (expr.getNameAsString().equals(ref.first)) {
             MethodData data = methodMap.get(n.getNameAsString());
-            if (data.shouldCast()) {
+            if (data != null && data.shouldCast()) {
                 String castString = data.castString().replace("*", ref.second);
                 expr.setName("(" + castString + ") " + ref.first); // TODO use the correct methods to make a
                                                                    // castexpr
