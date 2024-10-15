@@ -36,17 +36,17 @@ public class VarianceProcessor extends AbstractProcessor {
         messager.printMessage(Kind.NOTE, "Processing annotations:\n");
         for (Element e : roundEnv.getElementsAnnotatedWith(MyVariance.class)) {
             MyVariance annotation = e.getAnnotation(MyVariance.class);
-            String packageName = processingEnv.getElementUtils().getPackageOf(e).toString();
-            if (packageName.contains("output"))
-                continue;
-            messager.printMessage(Kind.NOTE, e.getEnclosingElement().getKind().name());
-
             // should not process method declarations
             if (!isClassParameter(e))
                 continue;
 
             TypeParameterElement tE = (TypeParameterElement) e;
             String className = tE.getEnclosingElement().getSimpleName().toString();
+            String packageName = processingEnv.getElementUtils().getPackageOf(tE.getEnclosingElement()).toString();
+
+            if (packageName.contains("output"))
+                continue;
+
             if (annotation.variance() == VarianceType.INVARIANT) {
                 messager.printMessage(Kind.NOTE,
                         String.format(
