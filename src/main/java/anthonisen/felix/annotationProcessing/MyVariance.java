@@ -11,4 +11,7 @@ public @interface MyVariance {
     public VarianceType variance() default VarianceType.INVARIANT;
 
     public int depth() default Integer.MAX_VALUE;
+
+    public boolean strict() default false;
+
 }
