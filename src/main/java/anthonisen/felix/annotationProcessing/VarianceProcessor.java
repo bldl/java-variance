@@ -1,6 +1,7 @@
 package anthonisen.felix.annotationProcessing;
 
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.expr.Name;
 import com.github.javaparser.ast.type.Type;
 import java.util.HashSet;
 import java.util.Set;
@@ -54,15 +55,15 @@ public class VarianceProcessor extends AbstractProcessor {
                                 className));
             }
 
-            checkVariance(className, annotation.variance(), packageName);
-            covariancer.makeCovariant(className + ".java", packageName);
+            checkVariance(className, annotation.variance(), packageName, tE.getSimpleName().toString());
+            covariancer.makeCovariant(className + ".java", packageName, tE.getSimpleName().toString());
 
         }
         covariancer.applyChanges();
         return true;
     }
 
-    private void checkVariance(String className, VarianceType variance, String packageName) {
+    private void checkVariance(String className, VarianceType variance, String packageName, String typeOfInterest) {
         Set<Type> types = new HashSet<>();
         CompilationUnit cu = covariancer.getSourceRoot().parse(packageName, className
                 + ".java");
@@ -72,7 +73,7 @@ public class VarianceProcessor extends AbstractProcessor {
             cu.accept(new ParameterTypeCollector(), types);
 
         for (Type type : types) {
-            if (TypeHandler.containsType(type, "T")) {
+            if (TypeHandler.containsType(type, typeOfInterest)) {
                 messager.printMessage(
                         Kind.WARNING,
                         String.format(

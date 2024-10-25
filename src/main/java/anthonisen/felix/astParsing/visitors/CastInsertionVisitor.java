@@ -23,7 +23,7 @@ public class CastInsertionVisitor extends ModifierVisitor<Void> {
     @Override
     public Visitable visit(MethodCallExpr n, Void arg) {
         Optional<Expression> scope = n.getScope();
-        if (scope.isEmpty() || !scope.get().getClass().equals(NameExpr.class))
+        if (scope.isEmpty() || !(scope.get() instanceof NameExpr))
             return super.visit(n, arg);
         NameExpr expr = (NameExpr) scope.get();
         if (expr.getNameAsString().equals(ref.first)) {

@@ -37,7 +37,7 @@ public class Covariancer {
                 CodeGenerationUtils.mavenModuleRoot(Covariancer.class).resolve(sourceFolder));
     }
 
-    public void makeCovariant(String cls, String packageName) {
+    public void makeCovariant(String cls, String packageName, String typeOfInterest) {
         messager.printMessage(Kind.NOTE, "Now parsing AST's");
 
         File dir = Paths.get(sourceFolder).toFile();
@@ -47,7 +47,7 @@ public class Covariancer {
         Set<ClassData> classesToWatch = computeClassesToWatch(dir, "");
         Map<String, MethodData> methodMap = new HashMap<>();
 
-        sourceRoot.parse(packageName, cls).accept(new MethodCollector(Arrays.asList("T")),
+        sourceRoot.parse(packageName, cls).accept(new MethodCollector(Arrays.asList(typeOfInterest)),
                 methodMap);
         changeAST(dir, classesToWatch, methodMap, "");
 
