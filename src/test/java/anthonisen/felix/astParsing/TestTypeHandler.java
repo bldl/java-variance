@@ -21,6 +21,14 @@ public class TestTypeHandler {
     }
 
     @Test
+    public void testReplaceTypeArgument() {
+        ClassOrInterfaceType type = new ClassOrInterfaceType(null, "Map");
+        type.setTypeArguments(new ClassOrInterfaceType(null, "Double"), new ClassOrInterfaceType(null, "Integer"));
+        assertTrue(TypeHandler.replaceTypeArgument(type, "Map", 1, "Object"));
+        assertEquals("Map<Double,Object>", type.asString());
+    }
+
+    @Test
     public void testMultipleTypeParams() {
         ClassOrInterfaceType type = new ClassOrInterfaceType(null, "Map");
         type.setTypeArguments(new ClassOrInterfaceType(null, "Integer"), new ClassOrInterfaceType(null, "Integer"));

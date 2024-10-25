@@ -1,6 +1,8 @@
 package anthonisen.felix.astParsing.util;
 
 import java.util.Map;
+import java.util.NoSuchElementException;
+
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 
@@ -21,6 +23,34 @@ public class TypeHandler {
             }
         }
         return found;
+    }
+
+    public static boolean replaceTypeArgument(Type type, String targetTypeName, int typeArgIdx,
+            String newTypeName) {
+        boolean found = false;
+        if (type instanceof ClassOrInterfaceType) {
+            ClassOrInterfaceType classType = (ClassOrInterfaceType) type;
+            if (classType.getNameAsString().equals(targetTypeName)) {
+                found = true;
+                try {
+                    ((ClassOrInterfaceType) classType.getTypeArguments().get().get(typeArgIdx)).setName(targetTypeName);
+                } catch (NoSuchElementException e) {
+                    throw new IllegalArgumentException(
+                            "Type: " + type + "does not have " + typeArgIdx + "type arguments.", e);
+                } catch (IndexOutOfBoundsException e) {
+                    throw new IllegalArgumentException(
+                            "Type: " + type + "does not have " + typeArgIdx + "type arguments.", e);
+                }
+            }
+
+            if (classType.getTypeArguments().isPresent()) {
+                for (Type arg : classType.getTypeArguments().get()) {
+                    found = replaceTypes(arg, targetTypeName, newTypeName) || found;
+                }
+            }
+        }
+        return found;
+
     }
 
     public static boolean replaceTypes(Type type, Map<String, String> classes) {
