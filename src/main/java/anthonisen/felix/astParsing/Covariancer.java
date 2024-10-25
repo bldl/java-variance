@@ -29,6 +29,7 @@ public class Covariancer {
     private Messager messager;
     private String sourceFolder;
     private SourceRoot sourceRoot;
+    private Map<String, CompilationUnit> compilationUnits = new HashMap<>();
 
     public Covariancer(Messager messager, String sourceFolder) {
         this.messager = messager;
@@ -37,7 +38,7 @@ public class Covariancer {
                 CodeGenerationUtils.mavenModuleRoot(Covariancer.class).resolve(sourceFolder));
     }
 
-    public void makeCovariant(String cls, String packageName, String typeOfInterest) {
+    public void eraseTypesAndInsertCasts(String cls, String packageName, String typeOfInterest) {
         messager.printMessage(Kind.NOTE, "Now parsing AST's");
 
         File dir = Paths.get(sourceFolder).toFile();
@@ -49,6 +50,11 @@ public class Covariancer {
 
         sourceRoot.parse(packageName, cls).accept(new MethodCollector(Arrays.asList(typeOfInterest)),
                 methodMap);
+        messager.printMessage(Kind.NOTE,
+                String.format("Method data collected for class %s and param %s", cls, typeOfInterest));
+        for (var m : methodMap.values()) {
+            messager.printMessage(Kind.NOTE, m.toString());
+        }
         changeAST(dir, classesToWatch, methodMap, "");
 
     }
@@ -71,16 +77,20 @@ public class Covariancer {
     private void changeAST(File dir, Set<ClassData> classesToWatch, Map<String, MethodData> methodMap,
             String packageName) {
         for (File file : dir.listFiles()) {
+            String fileName = file.getName();
             if (file.isDirectory()) {
-                if (!file.getName().equals("output"))
-                    changeAST(file, classesToWatch, methodMap, appendPackageDeclaration(packageName, file.getName()));
+                if (!fileName.equals("output"))
+                    changeAST(file, classesToWatch, methodMap, appendPackageDeclaration(packageName, fileName));
                 continue;
             }
             if (!isJavaFile(file))
                 continue;
 
-            CompilationUnit cu = sourceRoot.parse(packageName, file.getName());
-            // changePackageDeclaration(cu);
+            CompilationUnit cu = compilationUnits.getOrDefault(fileName,
+                    sourceRoot.parse(packageName, fileName));
+            if (compilationUnits.putIfAbsent(fileName, cu) != null)
+                messager.printMessage(Kind.NOTE, "Already created cu for class " + fileName);
+
             Set<Pair<String, String>> varsToWatch = new HashSet<>();
             cu.accept(new VariableCollector(classesToWatch), varsToWatch);
             cu.accept(new TypeEraserVisitor(classesToWatch), null);
