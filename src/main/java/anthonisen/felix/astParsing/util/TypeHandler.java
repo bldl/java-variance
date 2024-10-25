@@ -11,7 +11,6 @@ public class TypeHandler {
             ClassOrInterfaceType classType = (ClassOrInterfaceType) type;
             if (classType.getNameAsString().equals(targetTypeName)) {
                 found = true;
-                classType.replace(new ClassOrInterfaceType(null, newTypeName));
                 classType.setName(newTypeName);
             }
 
