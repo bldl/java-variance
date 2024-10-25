@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
-
+import java.util.Map;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
 import anthonisen.felix.astParsing.util.TypeHandler;
@@ -24,9 +24,16 @@ public class TestTypeHandler {
     public void testMultipleTypeParams() {
         ClassOrInterfaceType type = new ClassOrInterfaceType(null, "Map");
         type.setTypeArguments(new ClassOrInterfaceType(null, "Integer"), new ClassOrInterfaceType(null, "Integer"));
-
         assertTrue(TypeHandler.replaceTypes(type, "Integer", "Double"));
         assertEquals("Map<Double,Double>", type.asString());
+    }
+
+    @Test
+    public void testDifferentTypeParams() {
+        ClassOrInterfaceType type = new ClassOrInterfaceType(null, "Map");
+        type.setTypeArguments(new ClassOrInterfaceType(null, "Double"), new ClassOrInterfaceType(null, "Integer"));
+        assertTrue(TypeHandler.replaceTypes(type, Map.of("Double", "Object", "Integer", "String")));
+        assertEquals("Map<Object,String>", type.asString());
     }
 
     @Test
