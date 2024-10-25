@@ -1,6 +1,5 @@
 package anthonisen.felix.astParsing.visitors;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import com.github.javaparser.ast.body.Parameter;
@@ -14,10 +13,10 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 
 public class VariableCollector extends VoidVisitorAdapter<Set<Pair<String, String>>> {
-    Set<String> classesToWatch = new HashSet<>();
+    ClassData classData;
 
-    public VariableCollector(Set<ClassData> classData) {
-        classData.forEach(data -> classesToWatch.add(data.className()));
+    public VariableCollector(ClassData classData) {
+        this.classData = classData;
     }
 
     @Override
@@ -38,8 +37,8 @@ public class VariableCollector extends VoidVisitorAdapter<Set<Pair<String, Strin
 
         ClassOrInterfaceType classType = (ClassOrInterfaceType) type;
 
-        if (!classesToWatch.contains(classType.getNameAsString()))
+        if (!classData.className().equals(classType.getNameAsString()))
             return; // visit typeparams, if present
-        arg.add(new Pair<>(varName, classType.getTypeArguments().get().get(0).toString()));
+        arg.add(new Pair<>(varName, classType.getTypeArguments().get().get(classData.indexOfParam()).toString()));
     }
 }

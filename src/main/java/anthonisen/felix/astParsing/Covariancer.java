@@ -1,8 +1,12 @@
 package anthonisen.felix.astParsing;
 
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.PackageDeclaration;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.expr.Name;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.TypeParameter;
 import com.github.javaparser.utils.CodeGenerationUtils;
 import com.github.javaparser.utils.SourceRoot;
 
@@ -13,8 +17,6 @@ import anthonisen.felix.astParsing.visitors.MethodCollector;
 import anthonisen.felix.astParsing.visitors.TypeEraserVisitor;
 import anthonisen.felix.astParsing.visitors.VariableCollector;
 import anthonisen.felix.util.Pair;
-import anthonisen.felix.astParsing.visitors.ClassCollector;
-
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -29,7 +31,6 @@ public class Covariancer {
     private Messager messager;
     private String sourceFolder;
     private SourceRoot sourceRoot;
-    private Map<String, CompilationUnit> compilationUnits = new HashMap<>();
 
     public Covariancer(Messager messager, String sourceFolder) {
         this.messager = messager;
@@ -45,55 +46,50 @@ public class Covariancer {
         assert dir.exists();
         assert dir.isDirectory();
 
-        Set<ClassData> classesToWatch = computeClassesToWatch(dir, "");
+        ClassData classData = computeClassData(cls, packageName, typeOfInterest);
+        System.out.println(classData);
         Map<String, MethodData> methodMap = new HashMap<>();
 
         sourceRoot.parse(packageName, cls).accept(new MethodCollector(Arrays.asList(typeOfInterest)),
                 methodMap);
-        messager.printMessage(Kind.NOTE,
-                String.format("Method data collected for class %s and param %s", cls, typeOfInterest));
-        for (var m : methodMap.values()) {
-            messager.printMessage(Kind.NOTE, m.toString());
-        }
-        changeAST(dir, classesToWatch, methodMap, "");
+
+        changeAST(dir, classData, methodMap, "");
 
     }
 
-    private Set<ClassData> computeClassesToWatch(File dir, String packageName) {
-        Set<ClassData> classesToWatch = new HashSet<>();
-        for (File file : dir.listFiles()) {
-            if (file.isDirectory()) {
-                if (!file.getName().equals("output"))
-                    classesToWatch
-                            .addAll(computeClassesToWatch(file, appendPackageDeclaration(packageName, file.getName())));
-                continue;
+    private ClassData computeClassData(String cls, String packageName, String typeOfInterest) {
+        CompilationUnit cu = sourceRoot.parse(packageName, cls);
+        var a = cu.findAll(ClassOrInterfaceDeclaration.class).get(0).getTypeParameters();
+        for (int i = 0; i < a.size(); ++i) {
+            TypeParameter type = a.get(i);
+            NodeList<ClassOrInterfaceType> boundList = type.getTypeBound();
+            String leftMostBound = boundList == null || boundList.size() == 0 ? "Object" : boundList.get(0).asString();
+            if (type.getNameAsString().equals(typeOfInterest)) {
+                a.get(i);
+                return new ClassData(cls.replaceFirst("\\.java$", ""), leftMostBound, i);
             }
-            CompilationUnit cu = sourceRoot.parse(packageName, file.getName());
-            cu.accept(new ClassCollector(), classesToWatch);
+
         }
-        return classesToWatch;
+        return null;
     }
 
-    private void changeAST(File dir, Set<ClassData> classesToWatch, Map<String, MethodData> methodMap,
+    private void changeAST(File dir, ClassData classData, Map<String, MethodData> methodMap,
             String packageName) {
         for (File file : dir.listFiles()) {
             String fileName = file.getName();
             if (file.isDirectory()) {
                 if (!fileName.equals("output"))
-                    changeAST(file, classesToWatch, methodMap, appendPackageDeclaration(packageName, fileName));
+                    changeAST(file, classData, methodMap, appendPackageDeclaration(packageName, fileName));
                 continue;
             }
             if (!isJavaFile(file))
                 continue;
 
-            CompilationUnit cu = compilationUnits.getOrDefault(fileName,
-                    sourceRoot.parse(packageName, fileName));
-            if (compilationUnits.putIfAbsent(fileName, cu) != null)
-                messager.printMessage(Kind.NOTE, "Already created cu for class " + fileName);
+            CompilationUnit cu = sourceRoot.parse(packageName, fileName);
 
             Set<Pair<String, String>> varsToWatch = new HashSet<>();
-            cu.accept(new VariableCollector(classesToWatch), varsToWatch);
-            cu.accept(new TypeEraserVisitor(classesToWatch), null);
+            cu.accept(new VariableCollector(classData), varsToWatch);
+            cu.accept(new TypeEraserVisitor(classData), null);
             for (Pair<String, String> var : varsToWatch) {
                 CastInsertionVisitor castInsertionVisitor = new CastInsertionVisitor(var, methodMap);
                 cu.accept(castInsertionVisitor, null);

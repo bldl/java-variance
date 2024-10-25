@@ -4,31 +4,27 @@ import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
 import com.github.javaparser.ast.visitor.Visitable;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
 import anthonisen.felix.astParsing.util.ClassData;
 import anthonisen.felix.astParsing.util.TypeHandler;
 
 public class TypeEraserVisitor extends ModifierVisitor<Void> {
 
-    Map<String, String> classCasts = new HashMap<>();
+    private ClassData classData;
 
-    public TypeEraserVisitor(Set<ClassData> classData) {
-        classData
-                .forEach(data -> classCasts.put(data.className(), data.className() + "<" + data.leftmostBound() + ">"));
+    public TypeEraserVisitor(ClassData classData) {
+        this.classData = classData;
     }
 
     @Override
     public Visitable visit(VariableDeclarationExpr n, Void arg) {
-        TypeHandler.replaceTypes(n.getElementType(), classCasts);
+        TypeHandler.replaceTypeArgument(n.getElementType(), classData.className(), classData.indexOfParam(),
+                classData.leftmostBound());
         return super.visit(n, arg);
     }
 
     public Visitable visit(Parameter n, Void arg) {
-        TypeHandler.replaceTypes(n.getType(), classCasts);
+        TypeHandler.replaceTypeArgument(n.getType(), classData.className(), classData.indexOfParam(),
+                classData.leftmostBound());
         return super.visit(n, arg);
     }
 }
