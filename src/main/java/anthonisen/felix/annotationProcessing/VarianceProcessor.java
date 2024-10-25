@@ -56,7 +56,7 @@ public class VarianceProcessor extends AbstractProcessor {
             }
 
             checkVariance(className, annotation.variance(), packageName, tE.getSimpleName().toString());
-            covariancer.makeCovariant(className + ".java", packageName, tE.getSimpleName().toString());
+            covariancer.eraseTypesAndInsertCasts(className + ".java", packageName, tE.getSimpleName().toString());
 
         }
         covariancer.applyChanges();
