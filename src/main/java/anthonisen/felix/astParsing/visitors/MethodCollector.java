@@ -13,8 +13,7 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.type.Type;
 
 public class MethodCollector extends VoidVisitorAdapter<Map<String, MethodData>> {
-
-    Set<String> typeParameters = new HashSet<>();
+    private final Set<String> typeParameters = new HashSet<>();
 
     public MethodCollector(Collection<String> typeParameters) {
         this.typeParameters.addAll(typeParameters);

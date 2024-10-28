@@ -8,8 +8,7 @@ import anthonisen.felix.astParsing.util.ClassData;
 import anthonisen.felix.astParsing.util.TypeHandler;
 
 public class TypeEraserVisitor extends ModifierVisitor<Void> {
-
-    private ClassData classData;
+    private final ClassData classData;
 
     public TypeEraserVisitor(ClassData classData) {
         this.classData = classData;

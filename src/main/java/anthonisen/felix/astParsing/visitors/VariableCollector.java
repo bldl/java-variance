@@ -13,7 +13,7 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 
 public class VariableCollector extends VoidVisitorAdapter<Set<Pair<String, String>>> {
-    ClassData classData;
+    private final ClassData classData;
 
     public VariableCollector(ClassData classData) {
         this.classData = classData;

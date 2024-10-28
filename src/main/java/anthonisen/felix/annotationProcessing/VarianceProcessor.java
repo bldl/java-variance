@@ -1,7 +1,6 @@
 package anthonisen.felix.annotationProcessing;
 
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.expr.Name;
 import com.github.javaparser.ast.type.Type;
 import java.util.HashSet;
 import java.util.Set;

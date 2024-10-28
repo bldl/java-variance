@@ -28,9 +28,9 @@ import javax.annotation.processing.Messager;
 import javax.tools.Diagnostic.Kind;
 
 public class Covariancer {
-    private Messager messager;
-    private String sourceFolder;
-    private SourceRoot sourceRoot;
+    private final Messager messager;
+    private final String sourceFolder;
+    private final SourceRoot sourceRoot;
 
     public Covariancer(Messager messager, String sourceFolder) {
         this.messager = messager;
@@ -47,7 +47,6 @@ public class Covariancer {
         assert dir.isDirectory();
 
         ClassData classData = computeClassData(cls, packageName, typeOfInterest);
-        System.out.println(classData);
         Map<String, MethodData> methodMap = new HashMap<>();
 
         sourceRoot.parse(packageName, cls).accept(new MethodCollector(Arrays.asList(typeOfInterest)),
