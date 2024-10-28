@@ -3,8 +3,11 @@ package anthonisen.felix.astParsing.visitors;
 import java.util.Map;
 import java.util.Optional;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.CastExpr;
+import com.github.javaparser.ast.expr.EnclosedExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
 import com.github.javaparser.ast.visitor.Visitable;
 
@@ -30,8 +33,10 @@ public class CastInsertionVisitor extends ModifierVisitor<Void> {
             MethodData data = methodMap.get(n.getNameAsString());
             if (data != null && data.shouldCast()) {
                 String castString = data.castString().replace("*", ref.second);
-                expr.setName("(" + castString + ") " + ref.first); // TODO use the correct methods to make a
-                                                                   // castexpr
+                ClassOrInterfaceType castType = new ClassOrInterfaceType(null, castString);
+                CastExpr cast = new CastExpr(castType, n);
+                EnclosedExpr enclosedCast = new EnclosedExpr(cast);
+                return enclosedCast;
             }
         }
         return super.visit(n, arg);
