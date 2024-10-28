@@ -36,7 +36,7 @@
     <dependency>
       <groupId>com.github.javaparser</groupId>
       <artifactId>javaparser-symbol-solver-core</artifactId>
-      <version>LATEST</version>
+      <version>3.26.2</version>
     </dependency>
     <dependency>
       <groupId>com.google.auto.service</groupId>
