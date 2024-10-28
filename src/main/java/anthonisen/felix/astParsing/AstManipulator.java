@@ -27,16 +27,16 @@ import java.util.Set;
 import javax.annotation.processing.Messager;
 import javax.tools.Diagnostic.Kind;
 
-public class Covariancer {
+public class AstManipulator {
     private final Messager messager;
     private final String sourceFolder;
     private final SourceRoot sourceRoot;
 
-    public Covariancer(Messager messager, String sourceFolder) {
+    public AstManipulator(Messager messager, String sourceFolder) {
         this.messager = messager;
         this.sourceFolder = sourceFolder;
         sourceRoot = new SourceRoot(
-                CodeGenerationUtils.mavenModuleRoot(Covariancer.class).resolve(sourceFolder));
+                CodeGenerationUtils.mavenModuleRoot(AstManipulator.class).resolve(sourceFolder));
     }
 
     public void eraseTypesAndInsertCasts(String cls, String packageName, String typeOfInterest) {
@@ -99,7 +99,7 @@ public class Covariancer {
     public void applyChanges() {
         this.sourceRoot.getCompilationUnits().forEach(cu -> changePackageDeclaration(cu));
         this.sourceRoot.saveAll(
-                CodeGenerationUtils.mavenModuleRoot(Covariancer.class).resolve(Paths.get(sourceFolder + "/output")));
+                CodeGenerationUtils.mavenModuleRoot(AstManipulator.class).resolve(Paths.get(sourceFolder + "/output")));
     }
 
     public SourceRoot getSourceRoot() {

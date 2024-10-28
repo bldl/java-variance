@@ -16,7 +16,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.tools.Diagnostic.Kind;
 import com.google.auto.service.AutoService;
-import anthonisen.felix.astParsing.Covariancer;
+import anthonisen.felix.astParsing.AstManipulator;
 import anthonisen.felix.astParsing.util.TypeHandler;
 import anthonisen.felix.astParsing.visitors.ParameterTypeCollector;
 import anthonisen.felix.astParsing.visitors.ReturnTypeCollector;
@@ -26,12 +26,12 @@ import anthonisen.felix.astParsing.visitors.ReturnTypeCollector;
 @SupportedAnnotationTypes("anthonisen.felix.annotationProcessing.MyVariance")
 public class VarianceProcessor extends AbstractProcessor {
     private Messager messager;
-    private Covariancer covariancer;
+    private AstManipulator astManipulator;
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         messager = processingEnv.getMessager();
-        covariancer = new Covariancer(messager,
+        astManipulator = new AstManipulator(messager,
                 System.getProperty("user.dir") + "/src/main/java");
         messager.printMessage(Kind.NOTE, "Processing annotations:\n");
         for (Element e : roundEnv.getElementsAnnotatedWith(MyVariance.class)) {
@@ -55,16 +55,16 @@ public class VarianceProcessor extends AbstractProcessor {
             }
 
             checkVariance(className, annotation.variance(), packageName, tE.getSimpleName().toString());
-            covariancer.eraseTypesAndInsertCasts(className + ".java", packageName, tE.getSimpleName().toString());
+            astManipulator.eraseTypesAndInsertCasts(className + ".java", packageName, tE.getSimpleName().toString());
 
         }
-        covariancer.applyChanges();
+        astManipulator.applyChanges();
         return true;
     }
 
     private void checkVariance(String className, VarianceType variance, String packageName, String typeOfInterest) {
         Set<Type> types = new HashSet<>();
-        CompilationUnit cu = covariancer.getSourceRoot().parse(packageName, className
+        CompilationUnit cu = astManipulator.getSourceRoot().parse(packageName, className
                 + ".java");
         if (variance == VarianceType.CONTRAVARIANT)
             cu.accept(new ReturnTypeCollector(), types);

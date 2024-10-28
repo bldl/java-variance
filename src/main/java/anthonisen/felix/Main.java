@@ -1,6 +1,6 @@
 package anthonisen.felix;
 
-import anthonisen.felix.astParsing.Covariancer;
+import anthonisen.felix.astParsing.AstManipulator;
 
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.AnnotationMirror;
@@ -10,7 +10,7 @@ import javax.tools.Diagnostic;
 
 class Main {
     public static void main(String[] args) {
-        Covariancer manip = new Covariancer(new StdoutMessager(), "example");
+        AstManipulator manip = new AstManipulator(new StdoutMessager(), "example");
         manip.eraseTypesAndInsertCasts("Herd.java", "", "T");
         manip.applyChanges();
     }
