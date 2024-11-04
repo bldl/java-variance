@@ -24,6 +24,9 @@ import javax.tools.Diagnostic.Kind;
 import com.google.auto.service.AutoService;
 import com.google.common.collect.ImmutableList;
 
+import anthonisen.felix.annotationProcessing.annotations.Contravariant;
+import anthonisen.felix.annotationProcessing.annotations.Covariant;
+import anthonisen.felix.annotationProcessing.annotations.MyVariance;
 import anthonisen.felix.astParsing.AstManipulator;
 import anthonisen.felix.astParsing.util.TypeHandler;
 import anthonisen.felix.astParsing.visitors.ParameterTypeCollector;

@@ -1,9 +1,11 @@
-package anthonisen.felix.annotationProcessing;
+package anthonisen.felix.annotationProcessing.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
+import anthonisen.felix.annotationProcessing.VarianceType;
 
 /**
  * Indicates the variance characteristics of a type parameter.
