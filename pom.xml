@@ -9,8 +9,7 @@
   <version>1.0</version>
 
   <name>java-variance</name>
-  <!-- FIXME change it to the project's website -->
-  <url>http://www.example.com</url>
+  <url>https://github.com/bldl/java-variance</url>
 
   <properties>
     <junit.version>5.9.1</junit.version>
