@@ -8,8 +8,30 @@
   <artifactId>java-variance</artifactId>
   <version>1.0</version>
 
-  <name>java-variance</name>
+  <name>{project.groupId}:${project.artifactId}</name>
   <url>https://github.com/bldl/java-variance</url>
+
+  <licenses>
+    <license>
+      <name>TODO</name>
+      <url>TODO</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Felix Anthonisen</name>
+      <email>felix.anthonisen@gmail.com</email>
+      <organization>University of Bergen</organization>
+      <organizationUrl>https://www.uib.no/</organizationUrl>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:git://github.com/bldl/java-variance.git</connection>
+    <developerConnection>scm:git:ssh://github.com:bldl/java-variance.git</developerConnection>
+    <url>https://github.com/bldl/java-variance/tree/main</url>
+  </scm>
 
   <properties>
     <junit.version>5.9.1</junit.version>
