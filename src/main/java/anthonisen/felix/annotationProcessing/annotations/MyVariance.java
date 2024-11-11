@@ -24,7 +24,7 @@ import anthonisen.felix.annotationProcessing.VarianceType;
  * }
  * </pre>
  *
- * @see VarianceType
+ * @see {@link VarianceType}
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE_PARAMETER)
