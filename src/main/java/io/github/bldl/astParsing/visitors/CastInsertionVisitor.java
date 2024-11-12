@@ -1,4 +1,4 @@
-package anthonisen.felix.astParsing.visitors;
+package io.github.bldl.astParsing.visitors;
 
 import java.util.Map;
 import java.util.Optional;
@@ -11,8 +11,8 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
 import com.github.javaparser.ast.visitor.Visitable;
 
-import anthonisen.felix.astParsing.util.MethodData;
-import anthonisen.felix.util.Pair;
+import io.github.bldl.astParsing.util.MethodData;
+import io.github.bldl.util.Pair;
 
 public class CastInsertionVisitor extends ModifierVisitor<Void> {
     private final Pair<String, String> ref;

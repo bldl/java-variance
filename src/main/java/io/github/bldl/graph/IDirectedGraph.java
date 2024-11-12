@@ -1,4 +1,4 @@
-package anthonisen.felix.graph;
+package io.github.bldl.graph;
 
 public interface IDirectedGraph<T> {
     public Iterable<T> getInVertices(T vertex);

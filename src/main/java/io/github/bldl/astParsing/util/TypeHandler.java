@@ -1,4 +1,4 @@
-package anthonisen.felix.astParsing.util;
+package io.github.bldl.astParsing.util;
 
 import java.util.Map;
 import java.util.NoSuchElementException;

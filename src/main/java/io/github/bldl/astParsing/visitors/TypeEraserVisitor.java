@@ -1,11 +1,12 @@
-package anthonisen.felix.astParsing.visitors;
+package io.github.bldl.astParsing.visitors;
 
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
 import com.github.javaparser.ast.visitor.Visitable;
-import anthonisen.felix.astParsing.util.ClassData;
-import anthonisen.felix.astParsing.util.TypeHandler;
+
+import io.github.bldl.astParsing.util.ClassData;
+import io.github.bldl.astParsing.util.TypeHandler;
 
 public class TypeEraserVisitor extends ModifierVisitor<Void> {
     private final ClassData classData;

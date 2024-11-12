@@ -1,4 +1,4 @@
-package anthonisen.felix.astParsing.visitors;
+package io.github.bldl.astParsing.visitors;
 
 import java.util.Set;
 
@@ -6,8 +6,8 @@ import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
-import anthonisen.felix.astParsing.util.ClassData;
-import anthonisen.felix.util.Pair;
+import io.github.bldl.astParsing.util.ClassData;
+import io.github.bldl.util.Pair;
 
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;

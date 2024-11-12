@@ -1,4 +1,4 @@
-package anthonisen.felix.util;
+package io.github.bldl.util;
 
 public class Pair<T, U> {
     public T first;

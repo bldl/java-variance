@@ -1,9 +1,9 @@
-package anthonisen.felix.astParsing.visitors;
+package io.github.bldl.astParsing.visitors;
 
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
-import anthonisen.felix.astParsing.util.MethodData;
-import anthonisen.felix.astParsing.util.TypeHandler;
+import io.github.bldl.astParsing.util.MethodData;
+import io.github.bldl.astParsing.util.TypeHandler;
 
 import java.util.Collection;
 import java.util.HashSet;

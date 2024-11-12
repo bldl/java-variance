@@ -1,4 +1,4 @@
-package anthonisen.felix.annotationProcessing;
+package io.github.bldl.annotationProcessing;
 
 public enum VarianceType {
     INVARIANT,
