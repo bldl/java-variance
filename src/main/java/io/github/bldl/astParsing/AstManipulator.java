@@ -100,6 +100,7 @@ public class AstManipulator {
 
     public ClassHierarchyGraph<String> computeClassHierarchy() {
         ClassHierarchyGraph<String> g = new ClassHierarchyGraph<>();
+        g.addVertex("Object");
         computeClassHierarchyRec(g, Paths.get(sourceFolder).toFile(), "");
         return g;
     }
