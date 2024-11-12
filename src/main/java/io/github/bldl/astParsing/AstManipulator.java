@@ -1,4 +1,4 @@
-package anthonisen.felix.astParsing;
+package io.github.bldl.astParsing;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.NodeList;
@@ -10,13 +10,15 @@ import com.github.javaparser.ast.type.TypeParameter;
 import com.github.javaparser.utils.CodeGenerationUtils;
 import com.github.javaparser.utils.SourceRoot;
 
-import anthonisen.felix.astParsing.util.ClassData;
-import anthonisen.felix.astParsing.util.MethodData;
-import anthonisen.felix.astParsing.visitors.CastInsertionVisitor;
-import anthonisen.felix.astParsing.visitors.MethodCollector;
-import anthonisen.felix.astParsing.visitors.TypeEraserVisitor;
-import anthonisen.felix.astParsing.visitors.VariableCollector;
-import anthonisen.felix.util.Pair;
+import io.github.bldl.astParsing.util.ClassData;
+import io.github.bldl.astParsing.util.MethodData;
+import io.github.bldl.astParsing.visitors.CastInsertionVisitor;
+import io.github.bldl.astParsing.visitors.MethodCollector;
+import io.github.bldl.astParsing.visitors.TypeEraserVisitor;
+import io.github.bldl.astParsing.visitors.VariableCollector;
+import io.github.bldl.graph.ClassHierarchyGraph;
+import io.github.bldl.util.Pair;
+
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -93,6 +95,41 @@ public class AstManipulator {
                 CastInsertionVisitor castInsertionVisitor = new CastInsertionVisitor(var, methodMap);
                 cu.accept(castInsertionVisitor, null);
             }
+        }
+    }
+
+    public ClassHierarchyGraph<String> computeClassHierarchy() {
+        ClassHierarchyGraph<String> g = new ClassHierarchyGraph<>();
+        computeClassHierarchyRec(g, Paths.get(sourceFolder).toFile(), "");
+        return g;
+    }
+
+    private void computeClassHierarchyRec(ClassHierarchyGraph<String> g, File dir, String packageName) {
+        for (File file : dir.listFiles()) {
+            String fileName = file.getName();
+            if (file.isDirectory()) {
+                if (!fileName.equals("output"))
+                    computeClassHierarchyRec(g, file, appendPackageDeclaration(packageName, fileName));
+                continue;
+            }
+            if (!isJavaFile(file))
+                continue;
+
+            CompilationUnit cu = sourceRoot.parse(packageName, fileName);
+
+            cu.findAll(ClassOrInterfaceDeclaration.class).forEach(cls -> {
+                NodeList<ClassOrInterfaceType> supertypes = cls.getExtendedTypes();
+                supertypes.addAll(cls.getImplementedTypes());
+                g.addVertex(cls.getNameAsString());
+                for (ClassOrInterfaceType supertype : supertypes) {
+                    if (!g.containsVertex(supertype.getNameAsString()))
+                        g.addVertex(supertype.getNameAsString());
+                    g.addEdge(supertype.getNameAsString(), cls.getNameAsString());
+                }
+                if (supertypes.isEmpty())
+                    g.addEdge("Object", cls.getNameAsString());
+            });
+            ;
         }
     }
 

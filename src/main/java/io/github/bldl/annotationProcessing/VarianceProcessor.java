@@ -1,10 +1,18 @@
-package anthonisen.felix.annotationProcessing;
+package io.github.bldl.annotationProcessing;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.type.Type;
 
 import java.lang.annotation.Annotation;
 
+import io.github.bldl.annotationProcessing.annotations.Contravariant;
+import io.github.bldl.annotationProcessing.annotations.Covariant;
+import io.github.bldl.annotationProcessing.annotations.MyVariance;
+import io.github.bldl.astParsing.AstManipulator;
+import io.github.bldl.astParsing.util.TypeHandler;
+import io.github.bldl.astParsing.visitors.ParameterTypeCollector;
+import io.github.bldl.astParsing.visitors.ReturnTypeCollector;
+import io.github.bldl.graph.ClassHierarchyGraph;
 import io.leangen.geantyref.AnnotationFormatException;
 import io.leangen.geantyref.TypeFactory;
 import java.util.HashSet;
@@ -24,14 +32,6 @@ import javax.tools.Diagnostic.Kind;
 import com.google.auto.service.AutoService;
 import com.google.common.collect.ImmutableList;
 
-import anthonisen.felix.annotationProcessing.annotations.Contravariant;
-import anthonisen.felix.annotationProcessing.annotations.Covariant;
-import anthonisen.felix.annotationProcessing.annotations.MyVariance;
-import anthonisen.felix.astParsing.AstManipulator;
-import anthonisen.felix.astParsing.util.TypeHandler;
-import anthonisen.felix.astParsing.visitors.ParameterTypeCollector;
-import anthonisen.felix.astParsing.visitors.ReturnTypeCollector;
-
 @AutoService(Processor.class)
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 @SupportedAnnotationTypes({
@@ -50,6 +50,8 @@ public class VarianceProcessor extends AbstractProcessor {
         messager = processingEnv.getMessager();
         astManipulator = new AstManipulator(messager,
                 System.getProperty("user.dir") + "/src/main/java");
+        ClassHierarchyGraph<String> classHierarchy = astManipulator.computeClassHierarchy();
+        messager.printMessage(Kind.NOTE, classHierarchy.toString());
         messager.printMessage(Kind.NOTE, "Processing annotations:\n");
         for (Class<? extends Annotation> annotationType : supportedAnnotations) {
             for (Element e : roundEnv.getElementsAnnotatedWith(annotationType)) {
