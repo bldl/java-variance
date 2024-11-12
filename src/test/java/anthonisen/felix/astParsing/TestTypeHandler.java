@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
-import anthonisen.felix.astParsing.util.TypeHandler;
+import io.github.bldl.astParsing.util.TypeHandler;
 
 public class TestTypeHandler {
     @Test
