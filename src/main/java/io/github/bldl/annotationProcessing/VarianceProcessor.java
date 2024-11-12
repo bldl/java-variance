@@ -35,9 +35,9 @@ import com.google.common.collect.ImmutableList;
 @AutoService(Processor.class)
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 @SupportedAnnotationTypes({
-        "anthonisen.felix.annotationProcessing.MyVariance",
-        "anthonisen.felix.annotationProcessing.Covariant",
-        "anthonisen.felix.annotationProcessing.Contravariant",
+        "io.github.bldl.annotationProcessing.annotations.MyVariance",
+        "io.github.bldl.annotationProcessing.annotations.Covariant",
+        "io.github.bldl.annotationProcessing.annotations.Contravariant",
 })
 public class VarianceProcessor extends AbstractProcessor {
     private Messager messager;
