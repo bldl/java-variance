@@ -42,17 +42,20 @@ public class AstManipulator {
     }
 
     public void eraseTypesAndInsertCasts(String cls, String packageName, String typeOfInterest) {
-        messager.printMessage(Kind.NOTE, "Now parsing AST's");
-
+        messager.printMessage(Kind.NOTE,
+                String.format("Now parsing AST's for class %s and type param %s", cls, typeOfInterest));
         File dir = Paths.get(sourceFolder).toFile();
         assert dir.exists();
         assert dir.isDirectory();
 
         ClassData classData = computeClassData(cls, packageName, typeOfInterest);
+        messager.printMessage(Kind.NOTE, "Collected class data:\n" + classData);
         Map<String, MethodData> methodMap = new HashMap<>();
 
         sourceRoot.parse(packageName, cls).accept(new MethodCollector(Arrays.asList(typeOfInterest)),
                 methodMap);
+
+        messager.printMessage(Kind.NOTE, "Collected methods:\n" + methodMap.toString());
 
         changeAST(dir, classData, methodMap, "");
 
@@ -90,6 +93,7 @@ public class AstManipulator {
 
             Set<Pair<String, String>> varsToWatch = new HashSet<>();
             cu.accept(new VariableCollector(classData), varsToWatch);
+            messager.printMessage(Kind.NOTE, "Collected variables to watch:\n" + varsToWatch);
             cu.accept(new TypeEraserVisitor(classData), null);
             for (Pair<String, String> var : varsToWatch) {
                 CastInsertionVisitor castInsertionVisitor = new CastInsertionVisitor(var, methodMap);
@@ -135,7 +139,10 @@ public class AstManipulator {
     }
 
     public void applyChanges() {
-        this.sourceRoot.getCompilationUnits().forEach(cu -> changePackageDeclaration(cu));
+        this.sourceRoot.getCompilationUnits().forEach(cu -> {
+            messager.printMessage(Kind.NOTE, "Saving cu: " + cu.toString());
+            changePackageDeclaration(cu);
+        });
         this.sourceRoot.saveAll(
                 CodeGenerationUtils.mavenModuleRoot(AstManipulator.class).resolve(Paths.get(sourceFolder + "/output")));
     }
