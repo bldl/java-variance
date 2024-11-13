@@ -53,8 +53,10 @@ public class VarianceProcessor extends AbstractProcessor {
         ClassHierarchyGraph<String> classHierarchy = astManipulator.computeClassHierarchy();
         messager.printMessage(Kind.NOTE, classHierarchy.toString());
         messager.printMessage(Kind.NOTE, "Processing annotations:\n");
+        boolean workHasBeenDone = false;
         for (Class<? extends Annotation> annotationType : supportedAnnotations) {
             for (Element e : roundEnv.getElementsAnnotatedWith(annotationType)) {
+                workHasBeenDone = true;
                 MyVariance annotation = e.getAnnotation(MyVariance.class);
                 try {
                     if (annotationType.equals(Covariant.class))
@@ -73,7 +75,8 @@ public class VarianceProcessor extends AbstractProcessor {
                     messager.printMessage(Kind.WARNING, "Could not parse annotation for element: " + e);
             }
         }
-        astManipulator.applyChanges();
+        if (workHasBeenDone)
+            astManipulator.applyChanges();
         return true;
     }
 
