@@ -4,12 +4,17 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.expr.AssignExpr;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.Name;
+import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.TypeParameter;
 import com.github.javaparser.utils.CodeGenerationUtils;
 import com.github.javaparser.utils.SourceRoot;
-
 import io.github.bldl.astParsing.util.ClassData;
 import io.github.bldl.astParsing.util.MethodData;
 import io.github.bldl.astParsing.visitors.CastInsertionVisitor;
@@ -18,6 +23,7 @@ import io.github.bldl.astParsing.visitors.TypeEraserVisitor;
 import io.github.bldl.astParsing.visitors.VariableCollector;
 import io.github.bldl.graph.ClassHierarchyGraph;
 import io.github.bldl.util.Pair;
+import com.github.javaparser.ast.body.Parameter;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -33,17 +39,19 @@ public class AstManipulator {
     private final Messager messager;
     private final String sourceFolder;
     private final SourceRoot sourceRoot;
+    private final ClassHierarchyGraph<String> classHierarchy;
 
     public AstManipulator(Messager messager, String sourceFolder) {
         this.messager = messager;
         this.sourceFolder = sourceFolder;
         sourceRoot = new SourceRoot(
                 CodeGenerationUtils.mavenModuleRoot(AstManipulator.class).resolve(sourceFolder));
+        classHierarchy = computeClassHierarchy();
     }
 
     public void applyChanges() {
         this.sourceRoot.getCompilationUnits().forEach(cu -> {
-            messager.printMessage(Kind.NOTE, "Saving cu: " + cu.toString());
+            // messager.printMessage(Kind.NOTE, "Saving cu: " + cu.toString());
             changePackageDeclaration(cu);
         });
         this.sourceRoot.saveAll(
@@ -69,9 +77,7 @@ public class AstManipulator {
                 methodMap);
 
         messager.printMessage(Kind.NOTE, "Collected methods:\n" + methodMap.toString());
-
         changeAST(dir, classData, methodMap, "");
-
     }
 
     public ClassHierarchyGraph<String> computeClassHierarchy() {
@@ -114,6 +120,7 @@ public class AstManipulator {
             Set<Pair<String, String>> varsToWatch = new HashSet<>();
             cu.accept(new VariableCollector(classData), varsToWatch);
             messager.printMessage(Kind.NOTE, "Collected variables to watch:\n" + varsToWatch);
+            performSubtypingChecks(cu, classData, methodMap, varsToWatch);
             cu.accept(new TypeEraserVisitor(classData), null);
             for (Pair<String, String> var : varsToWatch) {
                 CastInsertionVisitor castInsertionVisitor = new CastInsertionVisitor(var, methodMap);
@@ -165,4 +172,61 @@ public class AstManipulator {
             return toAppend;
         return existing + "." + toAppend;
     }
+
+    private void performSubtypingChecks(CompilationUnit cu, ClassData classData,
+            Map<String, MethodData> methodMap,
+            Set<Pair<String, String>> varsToWatch) {
+        Map<String, Map<Integer, Type>> methodParams = collectMethodParams(cu, classData);
+        cu.findAll(MethodCallExpr.class).forEach(methodCall -> {
+            if (!methodParams.containsKey(methodCall.getNameAsString()))
+                return;
+            for (Integer paramIndex : methodParams.get(methodCall.getNameAsString()).keySet()) {
+                Expression e = methodCall.getArgument(paramIndex);
+                if (!(e instanceof NameExpr)) {
+                    messager.printMessage(Kind.WARNING, "Cannot resolve type for expression: " + e.toString());
+                    continue;
+                }
+                String name = ((NameExpr) e).getNameAsString();
+                varsToWatch.forEach(p -> {
+                    if (p.first.equals(name)) {
+                        // check subtyping
+                    }
+                });
+            }
+
+        });
+        cu.findAll(AssignExpr.class).forEach(assignExpr -> {
+
+            messager.printMessage(Kind.NOTE, assignExpr.toString());
+            messager.printMessage(Kind.NOTE, assignExpr.getTarget().getClass().toString());
+            messager.printMessage(Kind.NOTE, assignExpr.getValue().getClass().toString());
+        });
+        // cu.findAll(ForEachStmt.class).forEach(stmt -> {
+
+        // });
+    }
+
+    private Map<String, Map<Integer, Type>> collectMethodParams(CompilationUnit cu, ClassData classData) {
+        Map<String, Map<Integer, Type>> mp = new HashMap<>();
+        cu.findAll(MethodDeclaration.class).forEach(dec -> {
+            NodeList<Parameter> params = dec.getParameters();
+            for (int i = 0; i < params.size(); ++i) {
+                Parameter param = params.get(i);
+                if (!(param.getType() instanceof ClassOrInterfaceType))
+                    continue;
+                ClassOrInterfaceType type = ((ClassOrInterfaceType) param.getType());
+                String methodName = dec.getNameAsString();
+                if (type.getNameAsString().equals(classData.className())) {
+                    mp.putIfAbsent(methodName, new HashMap<>());
+                    mp.get(methodName).put(i, type.getTypeArguments().get().get(classData.indexOfParam()));
+                }
+            }
+        });
+        return mp;
+    }
+
+    private String resolveType() {
+        return null;
+    }
+
 }
