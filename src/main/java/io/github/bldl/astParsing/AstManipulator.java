@@ -41,6 +41,19 @@ public class AstManipulator {
                 CodeGenerationUtils.mavenModuleRoot(AstManipulator.class).resolve(sourceFolder));
     }
 
+    public void applyChanges() {
+        this.sourceRoot.getCompilationUnits().forEach(cu -> {
+            messager.printMessage(Kind.NOTE, "Saving cu: " + cu.toString());
+            changePackageDeclaration(cu);
+        });
+        this.sourceRoot.saveAll(
+                CodeGenerationUtils.mavenModuleRoot(AstManipulator.class).resolve(Paths.get(sourceFolder + "/output")));
+    }
+
+    public SourceRoot getSourceRoot() {
+        return sourceRoot;
+    }
+
     public void eraseTypesAndInsertCasts(String cls, String packageName, String typeOfInterest) {
         messager.printMessage(Kind.NOTE,
                 String.format("Now parsing AST's for class %s and type param %s", cls, typeOfInterest));
@@ -59,6 +72,13 @@ public class AstManipulator {
 
         changeAST(dir, classData, methodMap, "");
 
+    }
+
+    public ClassHierarchyGraph<String> computeClassHierarchy() {
+        ClassHierarchyGraph<String> g = new ClassHierarchyGraph<>();
+        g.addVertex("Object");
+        computeClassHierarchyRec(g, Paths.get(sourceFolder).toFile(), "");
+        return g;
     }
 
     private ClassData computeClassData(String cls, String packageName, String typeOfInterest) {
@@ -102,13 +122,6 @@ public class AstManipulator {
         }
     }
 
-    public ClassHierarchyGraph<String> computeClassHierarchy() {
-        ClassHierarchyGraph<String> g = new ClassHierarchyGraph<>();
-        g.addVertex("Object");
-        computeClassHierarchyRec(g, Paths.get(sourceFolder).toFile(), "");
-        return g;
-    }
-
     private void computeClassHierarchyRec(ClassHierarchyGraph<String> g, File dir, String packageName) {
         for (File file : dir.listFiles()) {
             String fileName = file.getName();
@@ -136,19 +149,6 @@ public class AstManipulator {
             });
             ;
         }
-    }
-
-    public void applyChanges() {
-        this.sourceRoot.getCompilationUnits().forEach(cu -> {
-            messager.printMessage(Kind.NOTE, "Saving cu: " + cu.toString());
-            changePackageDeclaration(cu);
-        });
-        this.sourceRoot.saveAll(
-                CodeGenerationUtils.mavenModuleRoot(AstManipulator.class).resolve(Paths.get(sourceFolder + "/output")));
-    }
-
-    public SourceRoot getSourceRoot() {
-        return sourceRoot;
     }
 
     private boolean isJavaFile(File file) {
