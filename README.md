@@ -16,7 +16,6 @@ This is a project that incorporates Java annotations in order to allow specifica
 - [Usage](#usage)
   - [Subsection](#subsection)
 - [Contributing](#contributing)
-- [License](#license)
 
 ## Installation
 
@@ -65,5 +64,3 @@ Contravariant, similarly to Covariant, aims to inline with the semantics of trad
 ## Contributing
 
 Pull requests and issues that aim to better the project are greatly appreciated.
-
-## License
