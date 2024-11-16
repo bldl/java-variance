@@ -60,6 +60,13 @@ public class ClassHierarchyGraph<T> implements IDirectedGraph<T> {
         return vertices;
     }
 
+    /**
+     * Determines whether one node is a descendant of another
+     * 
+     * @param ancestor   the presumed ancestor
+     * @param descendant the presumed descendant
+     * @return whether {@code descendant} is a descendant of {@code ancestor}
+     */
     public boolean isDescendant(T ancestor, T descendant) {
         Set<T> visited = new HashSet<>();
         dfs(ancestor, visited);
