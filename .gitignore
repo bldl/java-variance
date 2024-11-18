@@ -2,3 +2,4 @@ target
 .vscode
 .idea
 output
+.DS_STORE
