@@ -11,7 +11,7 @@ import io.github.bldl.astParsing.AstManipulator;
 class Main {
     public static void main(String[] args) {
         AstManipulator manip = new AstManipulator(new StdoutMessager(), "example");
-        manip.eraseTypesAndInsertCasts("Herd.java", "", "T");
+        manip.eraseTypesAndInsertCasts("Herd.java", "", null);
         manip.applyChanges();
     }
 }

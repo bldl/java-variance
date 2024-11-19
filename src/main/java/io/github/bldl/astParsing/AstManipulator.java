@@ -1,6 +1,7 @@
 package io.github.bldl.astParsing;
 
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -10,13 +11,18 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.Name;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.nodeTypes.NodeWithAnnotations;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.TypeParameter;
+import com.github.javaparser.ast.visitor.ModifierVisitor;
+import com.github.javaparser.ast.visitor.Visitable;
 import com.github.javaparser.utils.CodeGenerationUtils;
 import com.github.javaparser.utils.SourceRoot;
+import io.github.bldl.annotationProcessing.annotations.MyVariance;
 import io.github.bldl.astParsing.util.ClassData;
 import io.github.bldl.astParsing.util.MethodData;
+import io.github.bldl.astParsing.util.ParamData;
 import io.github.bldl.astParsing.visitors.CastInsertionVisitor;
 import io.github.bldl.astParsing.visitors.MethodCollector;
 import io.github.bldl.astParsing.visitors.TypeEraserVisitor;
@@ -27,7 +33,6 @@ import com.github.javaparser.ast.body.Parameter;
 
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -51,9 +56,9 @@ public class AstManipulator {
 
     public void applyChanges() {
         this.sourceRoot.getCompilationUnits().forEach(cu -> {
-            // messager.printMessage(Kind.NOTE, "Saving cu: " + cu.toString());
             changePackageDeclaration(cu);
         });
+        messager.printMessage(Kind.NOTE, "Saving modified AST's to output directory");
         this.sourceRoot.saveAll(
                 CodeGenerationUtils.mavenModuleRoot(AstManipulator.class).resolve(Paths.get(sourceFolder + "/output")));
     }
@@ -62,22 +67,38 @@ public class AstManipulator {
         return sourceRoot;
     }
 
-    public void eraseTypesAndInsertCasts(String cls, String packageName, String typeOfInterest) {
+    public void eraseTypesAndInsertCasts(String cls, String packageName, Map<String, MyVariance> mp) {
         messager.printMessage(Kind.NOTE,
-                String.format("Now parsing AST's for class %s and type param %s", cls, typeOfInterest));
+                String.format("Now parsing AST's for class %s", cls));
         File dir = Paths.get(sourceFolder).toFile();
         assert dir.exists();
         assert dir.isDirectory();
-
-        ClassData classData = computeClassData(cls, packageName, typeOfInterest);
+        eraseAnnotations(cls, packageName);
+        ClassData classData = computeClassData(cls, packageName, mp);
         messager.printMessage(Kind.NOTE, "Collected class data:\n" + classData);
         Map<String, MethodData> methodMap = new HashMap<>();
-
-        sourceRoot.parse(packageName, cls).accept(new MethodCollector(Arrays.asList(typeOfInterest)),
+        sourceRoot.parse(packageName, cls).accept(new MethodCollector(mp.keySet()),
                 methodMap);
 
         messager.printMessage(Kind.NOTE, "Collected methods:\n" + methodMap.toString());
         changeAST(dir, classData, methodMap, "");
+    }
+
+    public void eraseAnnotations(String cls, String packageName) {
+        Set<String> annotations = Set.of("MyVariance", "Covariant", "Contravariant");
+        CompilationUnit cu = sourceRoot.parse(packageName, cls);
+        cu.accept(new ModifierVisitor<Void>() {
+            @Override
+            public Visitable visit(Parameter n, Void arg) {
+                n.getAnnotations().removeIf(annotation -> annotations.contains(annotation.getNameAsString()));
+                return super.visit(n, arg);
+            }
+
+            public Visitable visit(TypeParameter n, Void arg) {
+                n.getAnnotations().removeIf(annotation -> annotations.contains(annotation.getNameAsString()));
+                return super.visit(n, arg);
+            }
+        }, null);
     }
 
     public ClassHierarchyGraph<String> computeClassHierarchy() {
@@ -87,20 +108,21 @@ public class AstManipulator {
         return g;
     }
 
-    private ClassData computeClassData(String cls, String packageName, String typeOfInterest) {
+    private ClassData computeClassData(String cls, String packageName, Map<String, MyVariance> mp) {
         CompilationUnit cu = sourceRoot.parse(packageName, cls);
+        Map<String, ParamData> indexAndBound = new HashMap<>();
         var a = cu.findAll(ClassOrInterfaceDeclaration.class).get(0).getTypeParameters();
         for (int i = 0; i < a.size(); ++i) {
             TypeParameter type = a.get(i);
             NodeList<ClassOrInterfaceType> boundList = type.getTypeBound();
             String leftMostBound = boundList == null || boundList.size() == 0 ? "Object" : boundList.get(0).asString();
-            if (type.getNameAsString().equals(typeOfInterest)) {
-                a.get(i);
-                return new ClassData(cls.replaceFirst("\\.java$", ""), leftMostBound, i);
+            if (mp.keySet().contains(type.getNameAsString())) {
+                indexAndBound.put(type.getNameAsString(),
+                        new ParamData(i, leftMostBound, mp.get(type.getNameAsString())));
             }
 
         }
-        return null;
+        return new ClassData(cls.replaceFirst("\\.java$", ""), indexAndBound);
     }
 
     private void changeAST(File dir, ClassData classData, Map<String, MethodData> methodMap,
@@ -117,12 +139,11 @@ public class AstManipulator {
 
             CompilationUnit cu = sourceRoot.parse(packageName, fileName);
 
-            Set<Pair<String, String>> varsToWatch = new HashSet<>();
+            Set<Pair<String, ClassOrInterfaceType>> varsToWatch = new HashSet<>();
             cu.accept(new VariableCollector(classData), varsToWatch);
-            messager.printMessage(Kind.NOTE, "Collected variables to watch:\n" + varsToWatch);
-            performSubtypingChecks(cu, classData, methodMap, varsToWatch);
+            // performSubtypingChecks(cu, classData, methodMap, varsToWatch);
             cu.accept(new TypeEraserVisitor(classData), null);
-            for (Pair<String, String> var : varsToWatch) {
+            for (Pair<String, ClassOrInterfaceType> var : varsToWatch) {
                 CastInsertionVisitor castInsertionVisitor = new CastInsertionVisitor(var, methodMap);
                 cu.accept(castInsertionVisitor, null);
             }
@@ -177,6 +198,10 @@ public class AstManipulator {
             Map<String, MethodData> methodMap,
             Set<Pair<String, String>> varsToWatch) {
         Map<String, Map<Integer, Type>> methodParams = collectMethodParams(cu, classData);
+        Map<String, String> varsToWatchMap = new HashMap<>();
+        varsToWatch.forEach(p -> {
+            varsToWatchMap.put(p.first, p.second);
+        });
         cu.findAll(MethodCallExpr.class).forEach(methodCall -> {
             if (!methodParams.containsKey(methodCall.getNameAsString()))
                 return;
@@ -189,19 +214,27 @@ public class AstManipulator {
                 String name = ((NameExpr) e).getNameAsString();
                 varsToWatch.forEach(p -> {
                     if (p.first.equals(name)) {
-                        // check subtyping
+                        // boolean valid = isValidSubtype(name, name, annotation);
+                        // if (!valid)
+                        messager.printMessage(Kind.ERROR,
+                                String.format("Invalid subtype for method call: ", methodCall.toString()));
                     }
                 });
             }
 
         });
-        cu.findAll(AssignExpr.class).forEach(assignExpr -> {
+        // cu.findAll(AssignExpr.class).forEach(assignExpr -> {
+        // if (!(assignExpr.getTarget() instanceof NameExpr))
+        // return;
+        // NameExpr name = (NameExpr) assignExpr.getTarget();
+        // if (!varsToWatchMap.containsKey(name.toString()))
+        // return;
 
-            messager.printMessage(Kind.NOTE, assignExpr.toString());
-            messager.printMessage(Kind.NOTE, assignExpr.getTarget().getClass().toString());
-            messager.printMessage(Kind.NOTE, assignExpr.getValue().getClass().toString());
-        });
+        // });
         // cu.findAll(ForEachStmt.class).forEach(stmt -> {
+
+        // });
+        // cu.findAll(VariableDeclarationExpr.class).forEach(stmt -> {
 
         // });
     }
@@ -218,15 +251,33 @@ public class AstManipulator {
                 String methodName = dec.getNameAsString();
                 if (type.getNameAsString().equals(classData.className())) {
                     mp.putIfAbsent(methodName, new HashMap<>());
-                    mp.get(methodName).put(i, type.getTypeArguments().get().get(classData.indexOfParam()));
+                    // mp.get(methodName).put(i,
+                    // type.getTypeArguments().get().get(classData.indexOfParam()));
                 }
             }
         });
         return mp;
     }
 
-    private String resolveType() {
-        return null;
+    private boolean isValidSubtype(String assigneeType, String assignedType, MyVariance annotation) {
+        if (!classHierarchy.containsVertex(assigneeType)) {
+            messager.printMessage(Kind.WARNING,
+                    String.format("%s is not a user defined type, so no subtyping checks can be made", assigneeType));
+            return true;
+        }
+        if (!classHierarchy.containsVertex(assignedType)) {
+            messager.printMessage(Kind.WARNING,
+                    String.format("%s is not a user defined type, so no subtyping checks can be made", assignedType));
+            return true;
+        }
+        switch (annotation.variance()) {
+            case COVARIANT:
+                return classHierarchy.isDescendant(assignedType, assigneeType);
+            case CONTRAVARIANT:
+                return classHierarchy.isDescendant(assigneeType, assignedType);
+            default:
+                return false;
+        }
     }
 
 }

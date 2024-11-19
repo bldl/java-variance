@@ -5,15 +5,15 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import io.github.bldl.astParsing.util.MethodData;
 import io.github.bldl.astParsing.util.TypeHandler;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.type.Type;
 
 public class MethodCollector extends VoidVisitorAdapter<Map<String, MethodData>> {
-    private final Set<String> typeParameters = new HashSet<>();
+    private final List<String> typeParameters = new ArrayList<>();
 
     public MethodCollector(Collection<String> typeParameters) {
         this.typeParameters.addAll(typeParameters);
@@ -25,8 +25,9 @@ public class MethodCollector extends VoidVisitorAdapter<Map<String, MethodData>>
         String methodName = n.getNameAsString();
         Type type = n.getType().clone();
         boolean shouldReplace = false;
-        for (String typeParameter : typeParameters) {
-            shouldReplace = shouldReplace || TypeHandler.replaceTypes(type, typeParameter, "*");
+        for (int i = 0; i < typeParameters.size(); ++i) {
+            String typeParameter = typeParameters.get(i);
+            shouldReplace = shouldReplace || TypeHandler.replaceTypes(type, typeParameter, Integer.toString(i));
         }
         arg.put(methodName, new MethodData(shouldReplace, type.asString()));
     }

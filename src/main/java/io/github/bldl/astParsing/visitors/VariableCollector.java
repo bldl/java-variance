@@ -12,7 +12,7 @@ import io.github.bldl.util.Pair;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 
-public class VariableCollector extends VoidVisitorAdapter<Set<Pair<String, String>>> {
+public class VariableCollector extends VoidVisitorAdapter<Set<Pair<String, ClassOrInterfaceType>>> {
     private final ClassData classData;
 
     public VariableCollector(ClassData classData) {
@@ -20,18 +20,18 @@ public class VariableCollector extends VoidVisitorAdapter<Set<Pair<String, Strin
     }
 
     @Override
-    public void visit(VariableDeclarator n, Set<Pair<String, String>> arg) {
+    public void visit(VariableDeclarator n, Set<Pair<String, ClassOrInterfaceType>> arg) {
         super.visit(n, arg);
-        handleType(n.getNameAsString(), n.getType(), arg);
+        handleType(n.getNameAsString(), n.getType().clone(), arg);
     }
 
     @Override
-    public void visit(Parameter n, Set<Pair<String, String>> arg) {
+    public void visit(Parameter n, Set<Pair<String, ClassOrInterfaceType>> arg) {
         super.visit(n, arg);
-        handleType(n.getNameAsString(), n.getType(), arg);
+        handleType(n.getNameAsString(), n.getType().clone(), arg);
     }
 
-    private void handleType(String varName, Type type, Set<Pair<String, String>> arg) {
+    private void handleType(String varName, Type type, Set<Pair<String, ClassOrInterfaceType>> arg) {
         if (!(type instanceof ClassOrInterfaceType))
             return;
 
@@ -39,6 +39,6 @@ public class VariableCollector extends VoidVisitorAdapter<Set<Pair<String, Strin
 
         if (!classData.className().equals(classType.getNameAsString()))
             return; // visit typeparams, if present
-        arg.add(new Pair<>(varName, classType.getTypeArguments().get().get(classData.indexOfParam()).toString()));
+        arg.add(new Pair<>(varName, classType));
     }
 }

@@ -12,9 +12,10 @@ import io.github.bldl.astParsing.AstManipulator;
 import io.github.bldl.astParsing.util.TypeHandler;
 import io.github.bldl.astParsing.visitors.ParameterTypeCollector;
 import io.github.bldl.astParsing.visitors.ReturnTypeCollector;
-import io.github.bldl.graph.ClassHierarchyGraph;
 import io.leangen.geantyref.AnnotationFormatException;
 import io.leangen.geantyref.TypeFactory;
+
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -42,18 +43,21 @@ import com.google.common.collect.ImmutableList;
 public class VarianceProcessor extends AbstractProcessor {
     private Messager messager;
     private AstManipulator astManipulator;
+    private Map<String, Map<String, MyVariance>> classes = new HashMap<>();
+    private Map<String, String> packages = new HashMap<>();
     private final ImmutableList<Class<? extends Annotation>> supportedAnnotations = ImmutableList.of(MyVariance.class,
             Covariant.class, Contravariant.class);
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        if (roundEnv.getElementsAnnotatedWithAny(Set.of(MyVariance.class,
+                Covariant.class, Contravariant.class)).isEmpty())
+            return false;
+        boolean workHasBeenDone = false;
         messager = processingEnv.getMessager();
         astManipulator = new AstManipulator(messager,
                 System.getProperty("user.dir") + "/src/main/java");
-        ClassHierarchyGraph<String> classHierarchy = astManipulator.computeClassHierarchy();
-        messager.printMessage(Kind.NOTE, classHierarchy.toString());
         messager.printMessage(Kind.NOTE, "Processing annotations:\n");
-        boolean workHasBeenDone = false;
         for (Class<? extends Annotation> annotationType : supportedAnnotations) {
             for (Element e : roundEnv.getElementsAnnotatedWith(annotationType)) {
                 workHasBeenDone = true;
@@ -67,7 +71,6 @@ public class VarianceProcessor extends AbstractProcessor {
                                 Map.of("variance", VarianceType.CONTRAVARIANT, "strict", true));
 
                 } catch (AnnotationFormatException ex) {
-                    // catch this later
                 }
                 if (annotation != null)
                     processElement(annotation, e);
@@ -75,8 +78,17 @@ public class VarianceProcessor extends AbstractProcessor {
                     messager.printMessage(Kind.WARNING, "Could not parse annotation for element: " + e);
             }
         }
-        if (workHasBeenDone)
-            astManipulator.applyChanges();
+        if (!workHasBeenDone) {
+            messager.printMessage(Kind.NOTE, "No changes made. Not saving.");
+            return false;
+        }
+
+        for (String className : classes.keySet()) {
+            astManipulator.eraseTypesAndInsertCasts(className + ".java", packages.get(className),
+                    classes.get(className));
+        }
+
+        astManipulator.applyChanges();
         return true;
     }
 
@@ -99,9 +111,12 @@ public class VarianceProcessor extends AbstractProcessor {
                             className));
         }
 
+        packages.putIfAbsent(className, packageName);
+        classes.putIfAbsent(className, new HashMap<>());
+        classes.get(className).put(tE.getSimpleName().toString(), annotation);
         checkVariance(className, annotation, packageName, tE.getSimpleName().toString());
-        astManipulator.eraseTypesAndInsertCasts(className + ".java", packageName,
-                tE.getSimpleName().toString());
+        // astManipulator.eraseTypesAndInsertCasts(className + ".java", packageName,
+        // tE.getSimpleName().toString(), annotation);
     }
 
     private void checkVariance(String className, MyVariance annotation, String packageName, String typeOfInterest) {
@@ -110,7 +125,7 @@ public class VarianceProcessor extends AbstractProcessor {
                 + ".java");
         if (annotation.variance() == VarianceType.CONTRAVARIANT)
             cu.accept(new ReturnTypeCollector(), types);
-        else
+        else if (annotation.variance() == VarianceType.COVARIANT)
             cu.accept(new ParameterTypeCollector(), types);
 
         for (Type type : types) {
@@ -122,7 +137,6 @@ public class VarianceProcessor extends AbstractProcessor {
                                 className,
                                 annotation.variance(),
                                 annotation.variance() == VarianceType.COVARIANT ? "IN" : "OUT"));
-                break;
             }
         }
     }

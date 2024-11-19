@@ -17,14 +17,16 @@ public class TypeEraserVisitor extends ModifierVisitor<Void> {
 
     @Override
     public Visitable visit(VariableDeclarationExpr n, Void arg) {
-        TypeHandler.replaceTypeArgument(n.getElementType(), classData.className(), classData.indexOfParam(),
-                classData.leftmostBound());
+        for (var param : classData.params().values())
+            TypeHandler.replaceTypeArgument(n.getElementType(), classData.className(), param.index(),
+                    param.leftmostBound());
         return super.visit(n, arg);
     }
 
     public Visitable visit(Parameter n, Void arg) {
-        TypeHandler.replaceTypeArgument(n.getType(), classData.className(), classData.indexOfParam(),
-                classData.leftmostBound());
+        for (var param : classData.params().values())
+            TypeHandler.replaceTypeArgument(n.getType(), classData.className(), param.index(),
+                    param.leftmostBound());
         return super.visit(n, arg);
     }
 }
