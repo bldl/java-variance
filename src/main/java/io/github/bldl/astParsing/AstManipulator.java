@@ -1,17 +1,11 @@
 package io.github.bldl.astParsing;
 
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.expr.AssignExpr;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.Name;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.nodeTypes.NodeWithAnnotations;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.TypeParameter;
@@ -25,12 +19,12 @@ import io.github.bldl.astParsing.util.MethodData;
 import io.github.bldl.astParsing.util.ParamData;
 import io.github.bldl.astParsing.visitors.CastInsertionVisitor;
 import io.github.bldl.astParsing.visitors.MethodCollector;
+import io.github.bldl.astParsing.visitors.SubtypingCheckVisitor;
 import io.github.bldl.astParsing.visitors.TypeEraserVisitor;
 import io.github.bldl.astParsing.visitors.VariableCollector;
 import io.github.bldl.graph.ClassHierarchyGraph;
 import io.github.bldl.util.Pair;
 import com.github.javaparser.ast.body.Parameter;
-
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -141,7 +135,10 @@ public class AstManipulator {
 
             Set<Pair<String, ClassOrInterfaceType>> varsToWatch = new HashSet<>();
             cu.accept(new VariableCollector(classData), varsToWatch);
-            // performSubtypingChecks(cu, classData, methodMap, varsToWatch);
+            cu.accept(
+                    new SubtypingCheckVisitor(collectMethodParams(cu, classData), messager, varsToWatch, classData,
+                            classHierarchy),
+                    null);
             cu.accept(new TypeEraserVisitor(classData), null);
             for (Pair<String, ClassOrInterfaceType> var : varsToWatch) {
                 CastInsertionVisitor castInsertionVisitor = new CastInsertionVisitor(var, methodMap);
@@ -175,7 +172,6 @@ public class AstManipulator {
                 if (supertypes.isEmpty())
                     g.addEdge("Object", cls.getNameAsString());
             });
-            ;
         }
     }
 
@@ -194,51 +190,6 @@ public class AstManipulator {
         return existing + "." + toAppend;
     }
 
-    private void performSubtypingChecks(CompilationUnit cu, ClassData classData,
-            Map<String, MethodData> methodMap,
-            Set<Pair<String, String>> varsToWatch) {
-        Map<String, Map<Integer, Type>> methodParams = collectMethodParams(cu, classData);
-        Map<String, String> varsToWatchMap = new HashMap<>();
-        varsToWatch.forEach(p -> {
-            varsToWatchMap.put(p.first, p.second);
-        });
-        cu.findAll(MethodCallExpr.class).forEach(methodCall -> {
-            if (!methodParams.containsKey(methodCall.getNameAsString()))
-                return;
-            for (Integer paramIndex : methodParams.get(methodCall.getNameAsString()).keySet()) {
-                Expression e = methodCall.getArgument(paramIndex);
-                if (!(e instanceof NameExpr)) {
-                    messager.printMessage(Kind.WARNING, "Cannot resolve type for expression: " + e.toString());
-                    continue;
-                }
-                String name = ((NameExpr) e).getNameAsString();
-                varsToWatch.forEach(p -> {
-                    if (p.first.equals(name)) {
-                        // boolean valid = isValidSubtype(name, name, annotation);
-                        // if (!valid)
-                        messager.printMessage(Kind.ERROR,
-                                String.format("Invalid subtype for method call: ", methodCall.toString()));
-                    }
-                });
-            }
-
-        });
-        // cu.findAll(AssignExpr.class).forEach(assignExpr -> {
-        // if (!(assignExpr.getTarget() instanceof NameExpr))
-        // return;
-        // NameExpr name = (NameExpr) assignExpr.getTarget();
-        // if (!varsToWatchMap.containsKey(name.toString()))
-        // return;
-
-        // });
-        // cu.findAll(ForEachStmt.class).forEach(stmt -> {
-
-        // });
-        // cu.findAll(VariableDeclarationExpr.class).forEach(stmt -> {
-
-        // });
-    }
-
     private Map<String, Map<Integer, Type>> collectMethodParams(CompilationUnit cu, ClassData classData) {
         Map<String, Map<Integer, Type>> mp = new HashMap<>();
         cu.findAll(MethodDeclaration.class).forEach(dec -> {
@@ -251,33 +202,11 @@ public class AstManipulator {
                 String methodName = dec.getNameAsString();
                 if (type.getNameAsString().equals(classData.className())) {
                     mp.putIfAbsent(methodName, new HashMap<>());
-                    // mp.get(methodName).put(i,
-                    // type.getTypeArguments().get().get(classData.indexOfParam()));
+                    mp.get(methodName).put(i,
+                            type);
                 }
             }
         });
         return mp;
     }
-
-    private boolean isValidSubtype(String assigneeType, String assignedType, MyVariance annotation) {
-        if (!classHierarchy.containsVertex(assigneeType)) {
-            messager.printMessage(Kind.WARNING,
-                    String.format("%s is not a user defined type, so no subtyping checks can be made", assigneeType));
-            return true;
-        }
-        if (!classHierarchy.containsVertex(assignedType)) {
-            messager.printMessage(Kind.WARNING,
-                    String.format("%s is not a user defined type, so no subtyping checks can be made", assignedType));
-            return true;
-        }
-        switch (annotation.variance()) {
-            case COVARIANT:
-                return classHierarchy.isDescendant(assignedType, assigneeType);
-            case CONTRAVARIANT:
-                return classHierarchy.isDescendant(assigneeType, assignedType);
-            default:
-                return false;
-        }
-    }
-
 }
