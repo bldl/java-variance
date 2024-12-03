@@ -78,7 +78,7 @@ public class TestClassHierarchyGraph {
         for (int i = 0; i < 4; ++i) {
             graph.addEdge(i, i + 1);
         }
-        assertTrue(graph.isDescendant(0, 4));
-        assertFalse(graph.isDescendant(4, 0));
+        assertTrue(graph.isDescendant(0, 4, -1));
+        assertFalse(graph.isDescendant(4, 0, -1));
     }
 }

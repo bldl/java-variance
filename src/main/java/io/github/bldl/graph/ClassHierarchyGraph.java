@@ -29,7 +29,7 @@ public class ClassHierarchyGraph<T> implements IDirectedGraph<T> {
         if (!containsVertex(initial) || !containsVertex(terminal))
             return false;
         Set<T> visited = new HashSet<>();
-        dfs(terminal, visited);
+        dfs(terminal, visited, -1, 0);
         if (visited.contains(initial)) {
             throw new IllegalArgumentException(
                     String.format("Adding an edge between %s and %s will create a cycle", initial,
@@ -67,18 +67,18 @@ public class ClassHierarchyGraph<T> implements IDirectedGraph<T> {
      * @param descendant the presumed descendant
      * @return whether {@code descendant} is a descendant of {@code ancestor}
      */
-    public boolean isDescendant(T ancestor, T descendant) {
+    public boolean isDescendant(T ancestor, T descendant, int max_depth) {
         Set<T> visited = new HashSet<>();
-        dfs(ancestor, visited);
+        dfs(ancestor, visited, max_depth, 0);
         return visited.contains(descendant);
     }
 
-    private void dfs(T current, Set<T> visited) {
-        if (visited.contains(current))
+    private void dfs(T current, Set<T> visited, int max_depth, int curr_depth) {
+        if (visited.contains(current) || curr_depth >= max_depth && max_depth >= 0)
             return;
         visited.add(current);
         for (T vertex : getOutVertices(current)) {
-            dfs(vertex, visited);
+            dfs(vertex, visited, max_depth, curr_depth + 1);
         }
     }
 

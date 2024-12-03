@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-
 import javax.annotation.processing.Messager;
 import javax.tools.Diagnostic.Kind;
 
@@ -27,6 +26,7 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
+import io.github.bldl.annotationProcessing.annotations.MyVariance;
 import io.github.bldl.astParsing.util.ClassData;
 import io.github.bldl.astParsing.util.ParamData;
 import io.github.bldl.graph.ClassHierarchyGraph;
@@ -40,10 +40,12 @@ public class SubtypingCheckVisitor extends VoidVisitorAdapter<Void> {
     private final ClassData classData;
     private final ClassHierarchyGraph<String> classHierarchy;
 
-    public SubtypingCheckVisitor(Map<String, Map<Integer, Type>> methodParams, Messager messager,
+    public SubtypingCheckVisitor(Map<String, Map<Integer, Type>> methodParams, Map<String, Type> methodTypes,
+            Messager messager,
             Set<Pair<String, ClassOrInterfaceType>> varsToWatch, ClassData classData,
             ClassHierarchyGraph<String> classHierarchy) {
         this.methodParams = methodParams;
+        this.methodTypes = methodTypes;
         this.messager = messager;
         this.classData = classData;
         this.classHierarchy = classHierarchy;
@@ -77,6 +79,16 @@ public class SubtypingCheckVisitor extends VoidVisitorAdapter<Void> {
         super.visit(assignExpr, arg);
         ClassOrInterfaceType assignedType = resolveType(assignExpr.getValue()),
                 assigneeType = resolveType(assignExpr.getTarget());
+        if (assignedType == null || assigneeType == null) {
+            messager.printMessage(Kind.WARNING, "Cannot resolve type for expression: " + assignExpr.toString());
+            return;
+        }
+        boolean valid = isValidSubtype(assigneeType, assignedType, null);
+        if (!valid)
+            messager.printMessage(Kind.ERROR,
+                    String.format("Invalid subtype for assignment expression call: %s\n%s is not a subtype of %s",
+                            assignExpr.toString(),
+                            assignedType.toString(), assigneeType.toString()));
     }
 
     public void visit(ForEachStmt n, Void arg) {
@@ -92,12 +104,16 @@ public class SubtypingCheckVisitor extends VoidVisitorAdapter<Void> {
         if (initializer.isEmpty())
             return;
         ClassOrInterfaceType assignedType = resolveType(initializer.get());
+        if (assignedType == null)
+            return;
         boolean valid = isValidSubtype((ClassOrInterfaceType) assigneeType,
                 assignedType,
                 classData.params());
         if (!valid)
             messager.printMessage(Kind.ERROR,
-                    String.format("Invalid subtype for variable declaration: %s", declaration.toString()));
+                    String.format("Invalid subtype for variable declaration: %s\n %s is not a subtype of %s",
+                            declaration.toString(),
+                            assignedType.toString(), assigneeType.toString()));
     }
 
     private ClassOrInterfaceType resolveType(Expression e) {
@@ -147,14 +163,56 @@ public class SubtypingCheckVisitor extends VoidVisitorAdapter<Void> {
                     String.format("%s is not a user defined type, so no subtyping checks can be made", assignedType));
             return true;
         }
-        return true;
-        // switch (annotation.variance()) {
-        // case COVARIANT:
-        // return classHierarchy.isDescendant(assignedType, assigneeType);
-        // case CONTRAVARIANT:
-        // return classHierarchy.isDescendant(assigneeType, assignedType);
-        // default:
-        // return false;
-        // }
+        if (!assigneeType.getTypeArguments().isPresent() || !assignedType.getTypeArguments().isPresent())
+            return true;
+
+        var assigneeArgs = assigneeType.getTypeArguments().get();
+        var assignedArgs = assignedType.getTypeArguments().get();
+        boolean isSubtype = true;
+
+        if (assignedArgs.size() == 0)
+            return true; // cannot perform type inference
+
+        if (assigneeType.getNameAsString().equals(classData.className())) {
+            Map<Integer, MyVariance> mp = new HashMap<>();
+            for (var param : classData.params().values())
+                mp.put(param.index(), param.variance());
+            for (int i = 0; i < assigneeArgs.size(); ++i) {
+                if (!(assignedArgs.get(i) instanceof ClassOrInterfaceType)
+                        || !(assignedArgs.get(i) instanceof ClassOrInterfaceType)) {
+                    continue;
+                }
+                if (!mp.containsKey(i)) {
+                    isSubtype = isSubtype && isValidSubtype((ClassOrInterfaceType) assigneeArgs.get(i),
+                            (ClassOrInterfaceType) assignedArgs.get(i),
+                            params);
+                    continue;
+                }
+                switch (mp.get(i).variance()) {
+                    case COVARIANT:
+                        return classHierarchy.isDescendant(
+                                ((ClassOrInterfaceType) assigneeArgs.get(i)).getNameAsString(),
+                                ((ClassOrInterfaceType) assignedArgs.get(i)).getNameAsString(), mp.get(i).depth());
+                    case CONTRAVARIANT:
+                        return classHierarchy.isDescendant(
+                                ((ClassOrInterfaceType) assignedArgs.get(i)).getNameAsString(),
+                                ((ClassOrInterfaceType) assigneeArgs.get(i)).getNameAsString(), mp.get(i).depth());
+                    default:
+                        return false;
+                }
+            }
+        }
+
+        for (int i = 0; i < assigneeArgs.size(); ++i) {
+            if (!(assignedArgs.get(i) instanceof ClassOrInterfaceType)
+                    || !(assignedArgs.get(i) instanceof ClassOrInterfaceType)) {
+                continue;
+            }
+            isSubtype = isSubtype && isValidSubtype((ClassOrInterfaceType) assigneeArgs.get(i),
+                    (ClassOrInterfaceType) assignedArgs.get(i),
+                    params);
+        }
+        return classHierarchy.isDescendant(assigneeType.getNameAsString(),
+                assignedType.getNameAsString(), -1);
     }
 }

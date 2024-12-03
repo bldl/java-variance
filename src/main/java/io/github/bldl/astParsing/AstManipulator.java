@@ -136,7 +136,8 @@ public class AstManipulator {
             Set<Pair<String, ClassOrInterfaceType>> varsToWatch = new HashSet<>();
             cu.accept(new VariableCollector(classData), varsToWatch);
             cu.accept(
-                    new SubtypingCheckVisitor(collectMethodParams(cu, classData), messager, varsToWatch, classData,
+                    new SubtypingCheckVisitor(collectMethodParams(cu, classData), collectMethodTypes(cu), messager,
+                            varsToWatch, classData,
                             classHierarchy),
                     null);
             cu.accept(new TypeEraserVisitor(classData), null);
@@ -206,6 +207,15 @@ public class AstManipulator {
                             type);
                 }
             }
+        });
+        return mp;
+    }
+
+    private Map<String, Type> collectMethodTypes(CompilationUnit cu) {
+        Map<String, Type> mp = new HashMap<>();
+        cu.findAll(MethodDeclaration.class).forEach(dec -> {
+            String methodName = dec.getNameAsString();
+            mp.put(methodName, dec.getType());
         });
         return mp;
     }
