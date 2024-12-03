@@ -81,4 +81,14 @@ public class TestClassHierarchyGraph {
         assertTrue(graph.isDescendant(0, 4, -1));
         assertFalse(graph.isDescendant(4, 0, -1));
     }
+
+    @Test
+    public void testIsSameLevel() {
+        graph.addEdge(0, 1);
+        graph.addEdge(0, 2);
+        graph.addEdge(2, 3);
+        assertTrue(graph.sameLevel(1, 2));
+        assertFalse(graph.sameLevel(1, 3));
+        assertFalse(graph.sameLevel(2, 0));
+    }
 }

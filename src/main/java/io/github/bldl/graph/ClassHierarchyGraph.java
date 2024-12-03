@@ -73,6 +73,26 @@ public class ClassHierarchyGraph<T> implements IDirectedGraph<T> {
         return visited.contains(descendant);
     }
 
+    public boolean sameLevel(T start, T target) {
+        return isSameLevel(start, target, new HashSet<>(), 0);
+    }
+
+    private boolean isSameLevel(T current, T target, Set<T> visited, int curr_depth) {
+        if (visited.contains(current))
+            return false;
+        if (current.equals(target))
+            return curr_depth == 0;
+        visited.add(current);
+        boolean b = false;
+        for (T vertex : getOutVertices(current)) {
+            b = b || isSameLevel(vertex, target, visited, curr_depth + 1);
+        }
+        for (T vertex : getInVertices(current)) {
+            b = b || isSameLevel(vertex, target, visited, curr_depth - 1);
+        }
+        return b;
+    }
+
     private void dfs(T current, Set<T> visited, int max_depth, int curr_depth) {
         if (visited.contains(current) || curr_depth >= max_depth && max_depth >= 0)
             return;
