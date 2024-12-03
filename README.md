@@ -35,7 +35,42 @@ This is a project that incorporates Java annotations in order to allow specifica
 $ git submodule add https://github.com/bldl/java-variance
 ```
 
-## Usage
+## What is variance
+
+# Variance in Generic Programming
+
+**Variance** in Generic Programming refers to how subtyping between more complex generic types (like `List<T>`) relates to subtyping between their type parameters (like `T`). It determines whether type relationships are preserved, reversed, or invariant when generic types are involved.
+
+## Types of Variance
+
+### 1. **Covariance**
+
+Covariance allows a generic type to be substituted with another generic type that has a more specific (derived) type parameter.
+
+- Example: `List<Animal>` can accept `List<Dog>` if `Dog` is a subtype of `Animal`.
+- Used when a generic type is only **producing** (out) values.
+- Marked with **`out`** in Kotlin or achieved with `? extends` in Java.
+
+### 2. **Contravariance**
+
+Contravariance allows a generic type to be substituted with another generic type that has a more general (base) type parameter.
+
+- Example: `List<Dog>` can accept `List<Animal>` if `Animal` is a supertype of `Dog`.
+- Used when a generic type is only **consuming** (in) values.
+- Marked with **`in`** in Kotlin or achieved with `? super` in Java.
+
+### 3. **Invariance**
+
+Invariance means no substitution is allowed between different generic types, even if their type parameters have a subtype relationship.
+
+- Example: `List<Animal>` and `List<Dog>` are entirely distinct and incompatible.
+- This is the default in many languages, like Java's generics.
+
+---
+
+## Key Insight
+
+Covariance and contravariance depend on how the generic type uses its type parameter: **producing outputs** (covariance) or **consuming inputs** (contravariance). Invariant types neither allow flexibility.
 
 ### Annotations
 
