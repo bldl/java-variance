@@ -197,7 +197,15 @@ public class SubtypingCheckVisitor extends VoidVisitorAdapter<Void> {
                         return classHierarchy.isDescendant(
                                 ((ClassOrInterfaceType) assignedArgs.get(i)).getNameAsString(),
                                 ((ClassOrInterfaceType) assigneeArgs.get(i)).getNameAsString(), mp.get(i).depth());
-                    case SIDE:
+                    case BIVARIANT:
+                        return classHierarchy.isDescendant(
+                                ((ClassOrInterfaceType) assigneeArgs.get(i)).getNameAsString(),
+                                ((ClassOrInterfaceType) assignedArgs.get(i)).getNameAsString(), mp.get(i).depth())
+                                || classHierarchy.isDescendant(
+                                        ((ClassOrInterfaceType) assignedArgs.get(i)).getNameAsString(),
+                                        ((ClassOrInterfaceType) assigneeArgs.get(i)).getNameAsString(),
+                                        mp.get(i).depth());
+                    case SIDEVARIANT:
                         return classHierarchy.sameLevel(((ClassOrInterfaceType) assignedArgs.get(i)).getNameAsString(),
                                 ((ClassOrInterfaceType) assigneeArgs.get(i)).getNameAsString());
                     default:

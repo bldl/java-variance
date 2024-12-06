@@ -4,5 +4,6 @@ public enum VarianceType {
     INVARIANT,
     COVARIANT,
     CONTRAVARIANT,
-    SIDE
+    BIVARIANT,
+    SIDEVARIANT
 }

@@ -127,6 +127,10 @@ public class VarianceProcessor extends AbstractProcessor {
             cu.accept(new ReturnTypeCollector(), types);
         else if (annotation.variance() == VarianceType.COVARIANT)
             cu.accept(new ParameterTypeCollector(), types);
+        else if (annotation.variance() == VarianceType.BIVARIANT) {
+            cu.accept(new ReturnTypeCollector(), types);
+            cu.accept(new ParameterTypeCollector(), types);
+        }
 
         for (Type type : types) {
             if (TypeHandler.containsType(type, typeOfInterest)) {
@@ -136,7 +140,8 @@ public class VarianceProcessor extends AbstractProcessor {
                                 "%s is declared as %s, but does not conform to constraints: contains T in %s position",
                                 className,
                                 annotation.variance(),
-                                annotation.variance() == VarianceType.COVARIANT ? "IN" : "OUT"));
+                                annotation.variance() == VarianceType.COVARIANT ? "IN"
+                                        : annotation.variance() == VarianceType.BIVARIANT ? "OUT" : "IN/OUT"));
             }
         }
     }
