@@ -1,6 +1,6 @@
 # Java Variance
 
-![Build Status](https://img.shields.io/github/workflow/status/bldl/java-variance/maven) ![License](https://img.shields.io/github/license/bldl/java-variance)
+![Build Status](https://img.shields.io/github/actions/workflow/status/bldl/java-variance/maven.yml) ![License](https://img.shields.io/github/license/bldl/java-variance)
 
 ## Description
 
@@ -101,12 +101,6 @@ There are currently three annotations provided by this project: MyVariance, Cova
 ### MyVariance
 
 MyVariance is the most customizable one, and allows you to experiment with different types of variance. With this one there are several parameters you can provide to specify what variance rules should apply:
-
-INVARIANT,
-COVARIANT,
-CONTRAVARIANT,
-BIVARIANT,
-SIDEVARIANT
 
 | Parameter  | Description                     | Possible values                                             |
 | ---------- | ------------------------------- | ----------------------------------------------------------- |
