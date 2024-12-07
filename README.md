@@ -17,9 +17,13 @@ This project provides Java annotations that enable fine-grained specification of
 - [Background](#background)
   - [What is variance](#what-is-variance)
   - [Types of variance](#types-of-variance)
+  - [New variance notions introduced in this project](#new-variance-notions-introduced-in-this-project)
+    - [Depth](#depth)
+    - [Side Variance](#side-variance)
+    - [Specifying subtyping relationships with required types](#specifying-subtyping-relationships-with-required-types)
 - [Usage](#usage)
   - [Annotations](#annotations)
-  - [Output](#output)
+  - [Building and running your project](#building-and-running-your-project)
 - [Contributing](#contributing)
 
 ## Installation
@@ -113,7 +117,7 @@ If we define a depth of 2:
 
 For example, consider the following type hierarchy:
 
-`Animal` ├── `Mammal` ├── `Dog`
+`Animal` ── `Mammal` ── `Dog`
 
 If we define a depth of 1:
 
@@ -128,11 +132,42 @@ For example, onsider the types `Animal`, `Dog`, and `Cat`, where `Dog` and `Cat`
 - `List<Dog>` would be a subtype of `List<Cat>`.
 - Similarly, `List<Cat>` would be a subtype of `List<Dog>`.
 
+#### Specifying subtyping relationships with required types
+
+By specifying a list of type names, you can enforce that any subtype must relate to all of the provided types. Here, the concept of "relate" means that the subtype must either be a **subtype** or a **supertype** of the specified types.
+
+**Required Subtypes**
+You can supply a list of required subtypes, meaning all types in the list must be subtypes of the given type for it to qualify as a valid subtype.
+
+**Required Supertypes**
+Conversely, for required supertypes, the given type must be a supertype of all the specified types to be considered valid.
+
+This allows for control over the branching points in your type hierarchy.
+
+To illustrate with an example, consider the following type hierarchy:
+
+`Animal` ── `Mammal` ── `Dog`
+
+└── `Bird` ── `Parrot`
+
+If you specify a list to be **covariant** with the required subtypes as `[Dog]`, then:
+
+- **`List<Mammal>`** would be a valid subtype of **`List<Animal>`**, because `Dog` is a subtype of `Mammal`.
+- **`List<Bird>`**, however, would **not** be a valid subtype of **`List<Animal>`**, since `Dog` is not a subtype of `Bird`.
+
 ## Usage
 
-To specify variance for classes, annotate the relevant type parameters with one of the provided annotations (details on these annotations will follow). Once annotated, you can use your classes as though they conform to the specified variance. Note that your IDE's linter may flag errors if the classes are used in ways that Java does not natively support. These warnings are expected and can be safely ignored.
+### How it works
 
-When you compile the project, a new output directory named `output_javavariance` will be created. In this directory, type arguments are erased, and the necessary casts are inserted to ensure the project runs correctly. At this stage, any previously flagged errors should no longer appear.
+To specify variance for your classes, annotate the relevant type parameters with one of the provided annotations (details on these annotations will follow). After annotating, you can use your classes as if they conform to the specified variance. However, note that your IDE’s linter may flag errors when using these classes in ways that Java does not natively support. These warnings are expected and can be safely ignored.
+
+The reason these warnings can be ignored lies in how Java's generics work. Generics in Java are essentially syntactic sugar-they are erased at compile-time. The compiler erases all generic types and replaces them with type casts to ensure type safety. This same technique is applied here.
+
+When projects using these annotations are compiled, an annotation processor runs. This processor analyzes the source files, parsing them into Abstract Syntax Trees (ASTs), and erases any instances of variant class arguments by replacing them with their leftmost bound. Later, when the argument is output, the processor inserts a cast back to the type it was originally marked as. This allows us to avoid type-related errors because every instance of the class will be of the exact same type.
+
+While this method may seem risky, as it removes type safety and could potentially lead to crashes, the annotation processor ensures type safety is preserved. The processor checks the ASTs to make sure that the types are correctly validated and do not cause issues during runtime.
+
+When you compile your project, a new output directory named `output_javavariance` is created. In this directory, type arguments are erased, and the necessary casts are inserted to ensure the project runs correctly. At this stage, any previously flagged errors should no longer appear, and the project should function as expected.
 
 ### Annotations
 
@@ -142,11 +177,13 @@ There are currently three annotations provided by this project: `MyVariance`, `C
 
 MyVariance is the most customizable one, and allows you to experiment with different types of variance. There are several parameters you can provide to specify what variance rules should apply:
 
-| Parameter  | Description                                                   | Possible values                                             |
-| ---------- | ------------------------------------------------------------- | ----------------------------------------------------------- |
-| `variance` | Specifies which variance type to use                          | COVARIANT, CONTRAVARIANT, INVARIANT, BIVARIANT, SIDEVARIANT |
-| `depth`    | How deep subtyping goes                                       | Integer value ≥ 0                                           |
-| `strict`   | Whether compilation should fail if any errors are encountered | `true`, `false`                                             |
+| Parameter            | Description                                                                              | Possible values                                             |
+| -------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `variance`           | Specifies which variance type to use                                                     | COVARIANT, CONTRAVARIANT, INVARIANT, BIVARIANT, SIDEVARIANT |
+| `depth`              | How deep subtyping goes                                                                  | Integer value ≥ 0                                           |
+| `strict`             | Whether compilation should fail if any errors are encountered                            | `true`, `false`                                             |
+| `requiredSubtypes`   | A list of types that must be a subtype of any given type for it to be considered valid   | Any primitive array of strings                              |
+| `requiredSupertypes` | A list of types that must be a supertype of any given type for it to be considered valid | Any primitive array of strings                              |
 
 #### Covariant
 
