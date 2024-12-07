@@ -6,6 +6,9 @@
 
 This project provides Java annotations that enable fine-grained specification of variance for class generics, improving flexibility in generic programming.
 
+> **DISCLAIMER:**
+> This project is not intended for production use. It's an incomplete implementation with limited support for certain use cases. It should be viewed as a tool for experimenting with variance in Java.
+
 ## Table of Contents
 
 - [Installation](#installation)
@@ -92,21 +95,58 @@ Invariance means no substitution is allowed between different generic types, eve
 - Example: `List<Animal>` and `List<Dog>` are entirely distinct and incompatible.
 - This is the default in many languages, like Java's generics.
 
+### New variance notions introduced in this project
+
+In addition to the traditional variance constructs that exist, some novel constructs are also provided here. These are experimental variances that may or may not make sense in a functional manner, but that can be interesting to experiment with.
+
+#### Depth
+
+Depth refers to the extent to which subtyping relationships are valid within a type hierarchy.
+
+- For **covariance**, depth determines how many levels you can move **down** in the hierarchy to find a valid subtype.
+- For **contravariance**, depth specifies how many levels you can move **up** for a valid subtype.
+
+If we define a depth of 2:
+
+- For **covariance**, starting at `Animal`, valid subtypes would include `Mammal`, `Bird`, `Dog`, `Cat`, `Sparrow`, and `Penguin` (two levels down).
+- For **contravariance**, starting at `Cat`, valid supertypes would include `Mammal` and `Animal` (two levels up).
+
+For example, consider the following type hierarchy:
+
+`Animal` ├── `Mammal` ├── `Dog`
+
+If we define a depth of 1:
+
+- For **covariance**, starting at `Animal`, a valid sutype would be `Mammal`, while `Dog` would be invalid since it's 2 levels down.
+
+#### Side Variance
+
+Side variance introduces a new concept in type relationships, where subtyping operates **sideways** rather than in the traditional **upward** or **downward** directions within a type hierarchy. This means that any classes on the same level in the hierarchy are considered valid subtypes of one another.
+
+For example, onsider the types `Animal`, `Dog`, and `Cat`, where `Dog` and `Cat` are direct subtypes of `Animal`. With a side-variant `List` type:
+
+- `List<Dog>` would be a subtype of `List<Cat>`.
+- Similarly, `List<Cat>` would be a subtype of `List<Dog>`.
+
 ## Usage
+
+To specify variance for classes, annotate the relevant type parameters with one of the provided annotations (details on these annotations will follow). Once annotated, you can use your classes as though they conform to the specified variance. Note that your IDE's linter may flag errors if the classes are used in ways that Java does not natively support. These warnings are expected and can be safely ignored.
+
+When you compile the project, a new output directory named `output_javavariance` will be created. In this directory, type arguments are erased, and the necessary casts are inserted to ensure the project runs correctly. At this stage, any previously flagged errors should no longer appear.
 
 ### Annotations
 
-There are currently three annotations provided by this project: MyVariance, Covariant and Contravariant. With these you are able to annotate type parameters for classes in order to specify fine grained variance.
+There are currently three annotations provided by this project: `MyVariance`, `Covariant` and `Contravariant`. With these you are able to annotate type parameters for classes in order to specify fine grained variance.
 
-### MyVariance
+#### MyVariance
 
-MyVariance is the most customizable one, and allows you to experiment with different types of variance. With this one there are several parameters you can provide to specify what variance rules should apply:
+MyVariance is the most customizable one, and allows you to experiment with different types of variance. There are several parameters you can provide to specify what variance rules should apply:
 
-| Parameter  | Description                     | Possible values                                             |
-| ---------- | ------------------------------- | ----------------------------------------------------------- |
-| `variance` | Specifies which variance to use | COVARIANT, CONTRAVARIANT, INVARIANT, BIVARIANT, SIDEVARIANT |
-| `depth`    | How deep subtyping goes         | Integer value ≥ 0                                           |
-| `strict`   | Whether                         | `true`, `false`                                             |
+| Parameter  | Description                                                   | Possible values                                             |
+| ---------- | ------------------------------------------------------------- | ----------------------------------------------------------- |
+| `variance` | Specifies which variance type to use                          | COVARIANT, CONTRAVARIANT, INVARIANT, BIVARIANT, SIDEVARIANT |
+| `depth`    | How deep subtyping goes                                       | Integer value ≥ 0                                           |
+| `strict`   | Whether compilation should fail if any errors are encountered | `true`, `false`                                             |
 
 #### Covariant
 
@@ -119,7 +159,8 @@ Covariant is a specific instance of MyVariance. It's intended to inline with the
 
 ```java
 public class ImmutableList<@Covariant T> {
-List<T> underlyingList = new ArrayList<>();
+
+    private List<T> underlyingList = new ArrayList<>();
 
     public ImmutableList(Iterable<T> initial) {
         initial.forEach(e -> underlyingList.add(e));
@@ -184,6 +225,18 @@ class Pair<@Contravariant X, @Contravariant Y> {
 ```
 
 </details>
+
+### Building and running your project
+
+If you are using Maven, you can compile your project with the following command:
+
+```sh
+mvn clean compile
+```
+
+If you are not using Maven, simply compile the project as you normally would.
+
+This process will generate a new output folder named `output_javavariance`. The code within this folder is the code you should run. To execute your program, run the main file from this directory as you typically would—whether through your IDE, by using `mvn exec`, or any other method you prefer for running Java applications.
 
 ## Contributing
 
