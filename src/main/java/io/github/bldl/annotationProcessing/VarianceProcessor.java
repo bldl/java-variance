@@ -101,7 +101,7 @@ public class VarianceProcessor extends AbstractProcessor {
         String className = tE.getEnclosingElement().getSimpleName().toString();
         String packageName = processingEnv.getElementUtils().getPackageOf(tE.getEnclosingElement()).toString();
 
-        if (packageName.contains("output"))
+        if (packageName.contains(AstManipulator.OUTPUT_NAME))
             return;
 
         if (annotation.variance() == VarianceType.INVARIANT) {

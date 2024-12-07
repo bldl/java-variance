@@ -26,6 +26,7 @@ import io.github.bldl.graph.ClassHierarchyGraph;
 import io.github.bldl.util.Pair;
 import com.github.javaparser.ast.body.Parameter;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,12 +34,14 @@ import java.util.Map;
 import java.util.Set;
 import javax.annotation.processing.Messager;
 import javax.tools.Diagnostic.Kind;
+import org.apache.commons.io.FileUtils;
 
 public class AstManipulator {
     private final Messager messager;
     private final String sourceFolder;
     private final SourceRoot sourceRoot;
     private final ClassHierarchyGraph<String> classHierarchy;
+    public static final String OUTPUT_NAME = "output_javavariance";
 
     public AstManipulator(Messager messager, String sourceFolder) {
         this.messager = messager;
@@ -52,9 +55,22 @@ public class AstManipulator {
         this.sourceRoot.getCompilationUnits().forEach(cu -> {
             changePackageDeclaration(cu);
         });
+        String outputPath = sourceFolder + "/" + OUTPUT_NAME;
+        messager.printMessage(Kind.NOTE, outputPath);
+        File dir = new File(outputPath);
+        if (dir.exists() && dir.isDirectory()) {
+            try {
+                messager.printMessage(Kind.NOTE, "Cleaning output directory: " + OUTPUT_NAME);
+                FileUtils.cleanDirectory(dir);
+                messager.printMessage(Kind.NOTE, "Successfully cleaned output directory");
+            } catch (IOException e) {
+                messager.printMessage(Kind.WARNING, "Could not clean output directory:\n" + e.toString());
+            }
+        }
         messager.printMessage(Kind.NOTE, "Saving modified AST's to output directory");
         this.sourceRoot.saveAll(
-                CodeGenerationUtils.mavenModuleRoot(AstManipulator.class).resolve(Paths.get(sourceFolder + "/output")));
+                CodeGenerationUtils.mavenModuleRoot(AstManipulator.class)
+                        .resolve(Paths.get(outputPath)));
     }
 
     public SourceRoot getSourceRoot() {
@@ -124,7 +140,7 @@ public class AstManipulator {
         for (File file : dir.listFiles()) {
             String fileName = file.getName();
             if (file.isDirectory()) {
-                if (!fileName.equals("output"))
+                if (!fileName.equals(OUTPUT_NAME))
                     changeAST(file, classData, methodMap, appendPackageDeclaration(packageName, fileName));
                 continue;
             }
@@ -152,7 +168,7 @@ public class AstManipulator {
         for (File file : dir.listFiles()) {
             String fileName = file.getName();
             if (file.isDirectory()) {
-                if (!fileName.equals("output"))
+                if (!fileName.equals(OUTPUT_NAME))
                     computeClassHierarchyRec(g, file, appendPackageDeclaration(packageName, fileName));
                 continue;
             }
@@ -181,7 +197,7 @@ public class AstManipulator {
     }
 
     private void changePackageDeclaration(CompilationUnit cu) {
-        String newPackageName = "output." + cu.getPackageDeclaration().get().getNameAsString();
+        String newPackageName = OUTPUT_NAME + "." + cu.getPackageDeclaration().get().getNameAsString();
         cu.setPackageDeclaration(new PackageDeclaration(new Name(newPackageName)));
     }
 
