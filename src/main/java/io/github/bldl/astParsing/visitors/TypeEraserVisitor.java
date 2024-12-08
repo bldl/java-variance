@@ -1,6 +1,8 @@
 package io.github.bldl.astParsing.visitors;
 
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
 import com.github.javaparser.ast.visitor.Visitable;
@@ -27,6 +29,13 @@ public class TypeEraserVisitor extends ModifierVisitor<Void> {
         for (var param : classData.params().values())
             TypeHandler.replaceTypeArgument(n.getType(), classData.className(), param.index(),
                     param.leftmostBound());
+        return super.visit(n, arg);
+    }
+
+    @Override
+    public Visitable visit(ObjectCreationExpr n, Void arg) {
+        if (n.getType().getNameAsString().equals(classData.className()))
+            n.getType().setTypeArguments(new NodeList<>());
         return super.visit(n, arg);
     }
 }
