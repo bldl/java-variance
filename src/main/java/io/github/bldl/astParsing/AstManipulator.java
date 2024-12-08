@@ -56,7 +56,6 @@ public class AstManipulator {
             changePackageDeclaration(cu);
         });
         String outputPath = sourceFolder + "/" + OUTPUT_NAME;
-        messager.printMessage(Kind.NOTE, outputPath);
         File dir = new File(outputPath);
         if (dir.exists() && dir.isDirectory()) {
             try {

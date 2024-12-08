@@ -38,7 +38,7 @@ public class VariableCollector extends VoidVisitorAdapter<Set<Pair<String, Class
         ClassOrInterfaceType classType = (ClassOrInterfaceType) type;
 
         if (!classData.className().equals(classType.getNameAsString()))
-            return; // visit typeparams, if present
+            return;
         arg.add(new Pair<>(varName, classType));
     }
 }

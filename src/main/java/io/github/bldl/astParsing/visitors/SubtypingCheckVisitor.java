@@ -56,7 +56,6 @@ public class SubtypingCheckVisitor extends VoidVisitorAdapter<Void> {
 
     public void visit(MethodCallExpr methodCall, Void arg) {
         super.visit(methodCall, arg);
-        messager.printMessage(Kind.NOTE, methodCall.getNameAsString());
         if (!methodParams.containsKey(methodCall.getNameAsString()))
             return;
         for (Entry<Integer, Type> param : methodParams.get(methodCall.getNameAsString()).entrySet()) {
