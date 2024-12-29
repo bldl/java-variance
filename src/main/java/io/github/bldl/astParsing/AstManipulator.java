@@ -48,7 +48,8 @@ public class AstManipulator {
         this.sourceFolder = sourceFolder;
         sourceRoot = new SourceRoot(
                 CodeGenerationUtils.mavenModuleRoot(AstManipulator.class).resolve(sourceFolder));
-        classHierarchy = computeClassHierarchy();
+        sourceRoot.getParserConfiguration().setSymbolResolver(symbolSolver);
+        classHierarchy = (new ClassHierarchyComputer(sourceRoot, messager, sourceFolder)).computeClassHierarchy();
     }
 
     public void applyChanges() {
@@ -110,13 +111,6 @@ public class AstManipulator {
         }, null);
     }
 
-    public ClassHierarchyGraph<String> computeClassHierarchy() {
-        ClassHierarchyGraph<String> g = new ClassHierarchyGraph<>();
-        g.addVertex("Object");
-        computeClassHierarchyRec(g, Paths.get(sourceFolder).toFile(), "");
-        return g;
-    }
-
     private ClassData computeClassData(String cls, String packageName, Map<String, MyVariance> mp) {
         CompilationUnit cu = sourceRoot.parse(packageName, cls);
         Map<String, ParamData> indexAndBound = new HashMap<>();
@@ -163,35 +157,7 @@ public class AstManipulator {
         }
     }
 
-    private void computeClassHierarchyRec(ClassHierarchyGraph<String> g, File dir, String packageName) {
-        for (File file : dir.listFiles()) {
-            String fileName = file.getName();
-            if (file.isDirectory()) {
-                if (!fileName.equals(OUTPUT_NAME))
-                    computeClassHierarchyRec(g, file, appendPackageDeclaration(packageName, fileName));
-                continue;
-            }
-            if (!isJavaFile(file))
-                continue;
-
-            CompilationUnit cu = sourceRoot.parse(packageName, fileName);
-
-            cu.findAll(ClassOrInterfaceDeclaration.class).forEach(cls -> {
-                NodeList<ClassOrInterfaceType> supertypes = cls.getExtendedTypes();
-                supertypes.addAll(cls.getImplementedTypes());
-                g.addVertex(cls.getNameAsString());
-                for (ClassOrInterfaceType supertype : supertypes) {
-                    if (!g.containsVertex(supertype.getNameAsString()))
-                        g.addVertex(supertype.getNameAsString());
-                    g.addEdge(supertype.getNameAsString(), cls.getNameAsString());
-                }
-                if (supertypes.isEmpty())
-                    g.addEdge("Object", cls.getNameAsString());
-            });
-        }
-    }
-
-    private boolean isJavaFile(File file) {
+    public static boolean isJavaFile(File file) {
         return file.getName().endsWith(".java");
     }
 
@@ -200,7 +166,7 @@ public class AstManipulator {
         cu.setPackageDeclaration(new PackageDeclaration(new Name(newPackageName)));
     }
 
-    private String appendPackageDeclaration(String existing, String toAppend) {
+    public static String appendPackageDeclaration(String existing, String toAppend) {
         if (existing.equals(""))
             return toAppend;
         return existing + "." + toAppend;
