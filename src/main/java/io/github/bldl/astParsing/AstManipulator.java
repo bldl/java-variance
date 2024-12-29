@@ -181,7 +181,7 @@ public class AstManipulator {
     }
 
     private Map<String, Map<Integer, Type>> collectMethodParams(CompilationUnit cu, ClassData classData) {
-        Map<String, Map<Integer, Type>> mp = new HashMap<>();
+        Map<String, Map<Integer, Type>> methodParams = new HashMap<>();
         cu.findAll(MethodDeclaration.class).forEach(dec -> {
             NodeList<Parameter> params = dec.getParameters();
             for (int i = 0; i < params.size(); ++i) {
@@ -191,21 +191,21 @@ public class AstManipulator {
                 ClassOrInterfaceType type = ((ClassOrInterfaceType) param.getType());
                 String methodName = dec.getNameAsString();
                 if (type.getNameAsString().equals(classData.className())) {
-                    mp.putIfAbsent(methodName, new HashMap<>());
-                    mp.get(methodName).put(i,
+                    methodParams.putIfAbsent(methodName, new HashMap<>());
+                    methodParams.get(methodName).put(i,
                             type);
                 }
             }
         });
-        return mp;
+        return methodParams;
     }
 
     private Map<String, Type> collectMethodTypes(CompilationUnit cu) {
-        Map<String, Type> mp = new HashMap<>();
+        Map<String, Type> methodTypes = new HashMap<>();
         cu.findAll(MethodDeclaration.class).forEach(dec -> {
             String methodName = dec.getNameAsString();
-            mp.put(methodName, dec.getType());
+            methodTypes.put(methodName, dec.getType());
         });
-        return mp;
+        return methodTypes;
     }
 }
