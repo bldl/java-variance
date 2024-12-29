@@ -11,6 +11,10 @@ import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.TypeParameter;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
 import com.github.javaparser.ast.visitor.Visitable;
+import com.github.javaparser.symbolsolver.JavaSymbolSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import com.github.javaparser.utils.CodeGenerationUtils;
 import com.github.javaparser.utils.SourceRoot;
 import io.github.bldl.annotationProcessing.annotations.MyVariance;
@@ -46,6 +50,10 @@ public class AstManipulator {
     public AstManipulator(Messager messager, String sourceFolder) {
         this.messager = messager;
         this.sourceFolder = sourceFolder;
+        CombinedTypeSolver typeSolver = new CombinedTypeSolver();
+        typeSolver.add(new ReflectionTypeSolver());
+        typeSolver.add(new JavaParserTypeSolver(Paths.get("src/main/java")));
+        JavaSymbolSolver symbolSolver = new JavaSymbolSolver(typeSolver);
         sourceRoot = new SourceRoot(
                 CodeGenerationUtils.mavenModuleRoot(AstManipulator.class).resolve(sourceFolder));
         sourceRoot.getParserConfiguration().setSymbolResolver(symbolSolver);
