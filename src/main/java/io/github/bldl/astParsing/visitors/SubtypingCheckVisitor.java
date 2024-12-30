@@ -3,7 +3,6 @@ package io.github.bldl.astParsing.visitors;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import javax.annotation.processing.Messager;
 import javax.tools.Diagnostic.Kind;
 
@@ -12,7 +11,6 @@ import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.stmt.ForEachStmt;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
@@ -21,7 +19,6 @@ import com.github.javaparser.resolution.types.ResolvedType;
 import io.github.bldl.annotationProcessing.annotations.MyVariance;
 import io.github.bldl.astParsing.util.ClassData;
 import io.github.bldl.graph.ClassHierarchyGraph;
-import io.github.bldl.util.Pair;
 
 public class SubtypingCheckVisitor extends VoidVisitorAdapter<Void> {
     private final Map<String, Map<Integer, Type>> methodParams;
@@ -29,9 +26,9 @@ public class SubtypingCheckVisitor extends VoidVisitorAdapter<Void> {
     private final ClassData classData;
     private final ClassHierarchyGraph<String> classHierarchy;
 
-    public SubtypingCheckVisitor(Map<String, Map<Integer, Type>> methodParams, Map<String, Type> methodTypes,
+    public SubtypingCheckVisitor(Map<String, Map<Integer, Type>> methodParams,
             Messager messager,
-            Set<Pair<String, ClassOrInterfaceType>> varsToWatch, ClassData classData,
+            ClassData classData,
             ClassHierarchyGraph<String> classHierarchy) {
         this.methodParams = methodParams;
         this.messager = messager;
