@@ -11,6 +11,10 @@ import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.TypeParameter;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
 import com.github.javaparser.ast.visitor.Visitable;
+import com.github.javaparser.symbolsolver.JavaSymbolSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import com.github.javaparser.utils.CodeGenerationUtils;
 import com.github.javaparser.utils.SourceRoot;
 import io.github.bldl.annotationProcessing.annotations.MyVariance;
@@ -46,9 +50,14 @@ public class AstManipulator {
     public AstManipulator(Messager messager, String sourceFolder) {
         this.messager = messager;
         this.sourceFolder = sourceFolder;
+        CombinedTypeSolver typeSolver = new CombinedTypeSolver();
+        typeSolver.add(new ReflectionTypeSolver());
+        typeSolver.add(new JavaParserTypeSolver(Paths.get("src/main/java")));
+        JavaSymbolSolver symbolSolver = new JavaSymbolSolver(typeSolver);
         sourceRoot = new SourceRoot(
                 CodeGenerationUtils.mavenModuleRoot(AstManipulator.class).resolve(sourceFolder));
-        classHierarchy = computeClassHierarchy();
+        sourceRoot.getParserConfiguration().setSymbolResolver(symbolSolver);
+        classHierarchy = (new ClassHierarchyComputer(sourceRoot, messager, sourceFolder)).computeClassHierarchy();
     }
 
     public void applyChanges() {
@@ -110,13 +119,6 @@ public class AstManipulator {
         }, null);
     }
 
-    public ClassHierarchyGraph<String> computeClassHierarchy() {
-        ClassHierarchyGraph<String> g = new ClassHierarchyGraph<>();
-        g.addVertex("Object");
-        computeClassHierarchyRec(g, Paths.get(sourceFolder).toFile(), "");
-        return g;
-    }
-
     private ClassData computeClassData(String cls, String packageName, Map<String, MyVariance> mp) {
         CompilationUnit cu = sourceRoot.parse(packageName, cls);
         Map<String, ParamData> indexAndBound = new HashMap<>();
@@ -151,9 +153,7 @@ public class AstManipulator {
             Set<Pair<String, ClassOrInterfaceType>> varsToWatch = new HashSet<>();
             cu.accept(new VariableCollector(classData), varsToWatch);
             cu.accept(
-                    new SubtypingCheckVisitor(collectMethodParams(cu, classData), collectMethodTypes(cu), messager,
-                            varsToWatch, classData,
-                            classHierarchy),
+                    new SubtypingCheckVisitor(collectMethodParams(cu, classData), messager, classData, classHierarchy),
                     null);
             cu.accept(new TypeEraserVisitor(classData), null);
             for (Pair<String, ClassOrInterfaceType> var : varsToWatch) {
@@ -163,35 +163,7 @@ public class AstManipulator {
         }
     }
 
-    private void computeClassHierarchyRec(ClassHierarchyGraph<String> g, File dir, String packageName) {
-        for (File file : dir.listFiles()) {
-            String fileName = file.getName();
-            if (file.isDirectory()) {
-                if (!fileName.equals(OUTPUT_NAME))
-                    computeClassHierarchyRec(g, file, appendPackageDeclaration(packageName, fileName));
-                continue;
-            }
-            if (!isJavaFile(file))
-                continue;
-
-            CompilationUnit cu = sourceRoot.parse(packageName, fileName);
-
-            cu.findAll(ClassOrInterfaceDeclaration.class).forEach(cls -> {
-                NodeList<ClassOrInterfaceType> supertypes = cls.getExtendedTypes();
-                supertypes.addAll(cls.getImplementedTypes());
-                g.addVertex(cls.getNameAsString());
-                for (ClassOrInterfaceType supertype : supertypes) {
-                    if (!g.containsVertex(supertype.getNameAsString()))
-                        g.addVertex(supertype.getNameAsString());
-                    g.addEdge(supertype.getNameAsString(), cls.getNameAsString());
-                }
-                if (supertypes.isEmpty())
-                    g.addEdge("Object", cls.getNameAsString());
-            });
-        }
-    }
-
-    private boolean isJavaFile(File file) {
+    public static boolean isJavaFile(File file) {
         return file.getName().endsWith(".java");
     }
 
@@ -200,38 +172,27 @@ public class AstManipulator {
         cu.setPackageDeclaration(new PackageDeclaration(new Name(newPackageName)));
     }
 
-    private String appendPackageDeclaration(String existing, String toAppend) {
+    public static String appendPackageDeclaration(String existing, String toAppend) {
         if (existing.equals(""))
             return toAppend;
         return existing + "." + toAppend;
     }
 
     private Map<String, Map<Integer, Type>> collectMethodParams(CompilationUnit cu, ClassData classData) {
-        Map<String, Map<Integer, Type>> mp = new HashMap<>();
-        cu.findAll(MethodDeclaration.class).forEach(dec -> {
-            NodeList<Parameter> params = dec.getParameters();
-            for (int i = 0; i < params.size(); ++i) {
-                Parameter param = params.get(i);
-                if (!(param.getType() instanceof ClassOrInterfaceType))
-                    continue;
-                ClassOrInterfaceType type = ((ClassOrInterfaceType) param.getType());
-                String methodName = dec.getNameAsString();
-                if (type.getNameAsString().equals(classData.className())) {
-                    mp.putIfAbsent(methodName, new HashMap<>());
-                    mp.get(methodName).put(i,
-                            type);
-                }
-            }
-        });
-        return mp;
-    }
-
-    private Map<String, Type> collectMethodTypes(CompilationUnit cu) {
-        Map<String, Type> mp = new HashMap<>();
+        Map<String, Map<Integer, Type>> methodParams = new HashMap<>();
         cu.findAll(MethodDeclaration.class).forEach(dec -> {
             String methodName = dec.getNameAsString();
-            mp.put(methodName, dec.getType());
+            if (methodParams.containsKey(methodName)) {
+                messager.printMessage(Kind.ERROR, "Duplicate methods inside a class. Can't handle polymorphism.");
+                return;
+            }
+            methodParams.put(methodName, new HashMap<>());
+            NodeList<Parameter> params = dec.getParameters();
+            for (int i = 0; i < params.size(); ++i) {
+                Type type = params.get(i).getType();
+                methodParams.get(methodName).put(i, type);
+            }
         });
-        return mp;
+        return methodParams;
     }
 }
