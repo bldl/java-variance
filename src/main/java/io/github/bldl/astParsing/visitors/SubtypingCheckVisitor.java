@@ -38,25 +38,16 @@ public class SubtypingCheckVisitor extends VoidVisitorAdapter<Void> {
 
     public void visit(MethodCallExpr methodCall, Void arg) {
         super.visit(methodCall, arg);
-        if (!methodParams.containsKey(methodCall.getNameAsString())) {
-            messager.printMessage(Kind.NOTE, "Don't have key for method: " + methodCall.getNameAsString());
+        if (!methodParams.containsKey(methodCall.getNameAsString()))
             return;
-        }
         // ResolvedMethodDeclaration methodDeclaration = methodCall.resolve();
         for (int i = 0; i < methodCall.getArguments().size(); ++i) {
-            try {
-                ResolvedType argumentType = methodCall.getArgument(i).calculateResolvedType(),
-                        parameterType = methodParams.get(methodCall.getNameAsString()).get(i).resolve();
-                if (!argumentType.isReferenceType() || !parameterType.isReferenceType())
-                    continue;
-                boolean valid = isValidSubtype(parameterType, argumentType);
-                if (!valid)
-                    messager.printMessage(Kind.ERROR,
-                            String.format("Invalid subtype for method call: %s", methodCall.toString()));
-            } catch (Exception e) {
-                messager.printMessage(Kind.NOTE, methodCall.getArguments().toString());
-                messager.printMessage(Kind.NOTE, methodParams.get(methodCall.getNameAsString()).toString());
-            }
+            ResolvedType argumentType = methodCall.getArgument(i).calculateResolvedType(),
+                    parameterType = methodParams.get(methodCall.getNameAsString()).get(i).resolve();
+            boolean valid = isValidSubtype(parameterType, argumentType);
+            if (!valid)
+                messager.printMessage(Kind.ERROR,
+                        String.format("Invalid subtype for method call: %s", methodCall.toString()));
         }
     }
 

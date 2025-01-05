@@ -181,18 +181,16 @@ public class AstManipulator {
     private Map<String, Map<Integer, Type>> collectMethodParams(CompilationUnit cu, ClassData classData) {
         Map<String, Map<Integer, Type>> methodParams = new HashMap<>();
         cu.findAll(MethodDeclaration.class).forEach(dec -> {
+            String methodName = dec.getNameAsString();
+            if (methodParams.containsKey(methodName)) {
+                messager.printMessage(Kind.ERROR, "Duplicate methods inside a class. Can't handle polymorphism.");
+                return;
+            }
+            methodParams.put(methodName, new HashMap<>());
             NodeList<Parameter> params = dec.getParameters();
             for (int i = 0; i < params.size(); ++i) {
-                Parameter param = params.get(i);
-                if (!(param.getType() instanceof ClassOrInterfaceType))
-                    continue;
-                ClassOrInterfaceType type = ((ClassOrInterfaceType) param.getType());
-                String methodName = dec.getNameAsString();
-                if (type.getNameAsString().equals(classData.className())) {
-                    methodParams.putIfAbsent(methodName, new HashMap<>());
-                    methodParams.get(methodName).put(i,
-                            type);
-                }
+                Type type = params.get(i).getType();
+                methodParams.get(methodName).put(i, type);
             }
         });
         return methodParams;
