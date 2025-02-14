@@ -133,7 +133,7 @@ public class AstManipulator {
             }
 
         }
-        return new ClassData(cls.replaceFirst("\\.java$", ""), indexAndBound);
+        return new ClassData(cls.replaceFirst("\\.java$", ""), packageName, indexAndBound);
     }
 
     private void changeAST(File dir, ClassData classData, Map<String, MethodData> methodMap,
