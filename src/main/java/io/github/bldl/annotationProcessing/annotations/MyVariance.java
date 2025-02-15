@@ -57,4 +57,8 @@ public @interface MyVariance {
      */
     public boolean strict() default false;
 
+    public Class<?>[] requiredSubtypes() default {};
+    
+    public Class<?>[] requiredSupertypes() default {};
+
 }
