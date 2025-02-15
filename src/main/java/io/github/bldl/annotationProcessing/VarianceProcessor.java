@@ -5,13 +5,14 @@ import com.github.javaparser.ast.type.Type;
 
 import java.lang.annotation.Annotation;
 
-import io.github.bldl.annotationProcessing.annotations.Contravariant;
-import io.github.bldl.annotationProcessing.annotations.Covariant;
-import io.github.bldl.annotationProcessing.annotations.MyVariance;
 import io.github.bldl.astParsing.AstManipulator;
 import io.github.bldl.astParsing.util.TypeHandler;
 import io.github.bldl.astParsing.visitors.ParameterTypeCollector;
 import io.github.bldl.astParsing.visitors.ReturnTypeCollector;
+import io.github.bldl.variance.annotations.Contravariant;
+import io.github.bldl.variance.annotations.Covariant;
+import io.github.bldl.variance.annotations.MyVariance;
+import io.github.bldl.variance.annotations.VarianceType;
 import io.leangen.geantyref.AnnotationFormatException;
 import io.leangen.geantyref.TypeFactory;
 

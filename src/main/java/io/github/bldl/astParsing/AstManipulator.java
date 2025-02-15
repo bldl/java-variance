@@ -17,7 +17,7 @@ import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeS
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import com.github.javaparser.utils.CodeGenerationUtils;
 import com.github.javaparser.utils.SourceRoot;
-import io.github.bldl.annotationProcessing.annotations.MyVariance;
+
 import io.github.bldl.astParsing.util.ClassData;
 import io.github.bldl.astParsing.util.MethodData;
 import io.github.bldl.astParsing.util.ParamData;
@@ -28,6 +28,8 @@ import io.github.bldl.astParsing.visitors.TypeEraserVisitor;
 import io.github.bldl.astParsing.visitors.VariableCollector;
 import io.github.bldl.graph.ClassHierarchyGraph;
 import io.github.bldl.util.Pair;
+import io.github.bldl.variance.annotations.MyVariance;
+
 import com.github.javaparser.ast.body.Parameter;
 import java.io.File;
 import java.io.IOException;

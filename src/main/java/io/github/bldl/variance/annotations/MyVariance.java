@@ -1,11 +1,9 @@
-package io.github.bldl.annotationProcessing.annotations;
+package io.github.bldl.variance.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import io.github.bldl.annotationProcessing.VarianceType;
 
 /**
  * Indicates the variance characteristics of a type parameter.
@@ -48,9 +46,10 @@ public @interface MyVariance {
      * Indicates whether strict variance checking is enforced.
      * 
      * <p>
-     * If set to true, the compiler will enforce strict variance rules. 
+     * If set to true, the compiler will enforce strict variance rules.
      * This means that compilation will fail if the specified variance
-     * is not adhered to. If set to false, warnings are logged, but program will still compile.
+     * is not adhered to. If set to false, warnings are logged, but program will
+     * still compile.
      * </p>
      * 
      * @return true if strict checking is enforced; false otherwise
@@ -58,7 +57,7 @@ public @interface MyVariance {
     public boolean strict() default false;
 
     public Class<?>[] requiredSubtypes() default {};
-    
+
     public Class<?>[] requiredSupertypes() default {};
 
 }

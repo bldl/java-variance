@@ -1,4 +1,4 @@
-package io.github.bldl.annotationProcessing;
+package io.github.bldl.variance.annotations;
 
 public enum VarianceType {
     INVARIANT,

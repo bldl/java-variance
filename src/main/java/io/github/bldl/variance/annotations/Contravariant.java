@@ -1,4 +1,4 @@
-package io.github.bldl.annotationProcessing.annotations;
+package io.github.bldl.variance.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,6 +7,6 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE_PARAMETER)
-public @interface Covariant {
+public @interface Contravariant {
 
 }

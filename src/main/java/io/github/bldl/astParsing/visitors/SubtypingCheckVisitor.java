@@ -17,10 +17,10 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
 import com.github.javaparser.resolution.types.ResolvedType;
 
-import io.github.bldl.annotationProcessing.annotations.MyVariance;
 import io.github.bldl.astParsing.AstManipulator;
 import io.github.bldl.astParsing.util.ClassData;
 import io.github.bldl.graph.ClassHierarchyGraph;
+import io.github.bldl.variance.annotations.MyVariance;
 
 public class SubtypingCheckVisitor extends VoidVisitorAdapter<Void> {
     private final Map<String, Map<Integer, Type>> methodParams;
